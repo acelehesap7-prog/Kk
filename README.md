@@ -1,15 +1,29 @@
 # KK Exchange - Gelişmiş Trading Platformu
 
-KK Exchange, kripto para, forex ve hisse senetleri için gelişmiş bir trading platformudur. Modern teknolojiler kullanılarak geliştirilmiş, kullanıcı dostu arayüzü ve güçlü özellikleri ile profesyonel trading deneyimi sunar.
+KK Exchange, 7 farklı piyasa türünde işlem yapabileceğiniz gelişmiş bir trading platformudur. Modern teknolojiler kullanılarak geliştirilmiş, kullanıcı dostu arayüzü ve güçlü özellikleri ile profesyonel trading deneyimi sunar.
 
 ## 🚀 Özellikler
 
-- **Çoklu Market Desteği**: Binance, KuCoin, OKX, ByBit entegrasyonu
-- **Gerçek Zamanlı Veriler**: WebSocket ile canlı fiyat güncellemeleri
-- **Gelişmiş Grafikler**: TradingView entegrasyonu
-- **KK99 Token**: Platform özel token sistemi
-- **Güvenli İşlemler**: 2FA ve gelişmiş güvenlik protokolleri
+### 📊 7 Farklı Piyasa Türü
+- **Spot Trading**: Gerçek zamanlı kripto para alım-satımı
+- **Futures**: Vadeli işlemler ve leverage seçenekleri
+- **Options**: Opsiyon sözleşmeleri ve Greeks hesaplamaları
+- **Forex**: Döviz çiftleri ve majör paralar
+- **Stocks**: Hisse senedi analizi ve işlemleri
+- **Commodities**: Emtia fiyat takibi ve işlemleri
+- **Indices**: Endeks performans metrikleri
+
+### 💰 KK99 Token Sistemi
+- **Token Ödülleri**: Her işlemde KK99 token kazanın
+- **Komisyon İndirimleri**: %75'e varan indirimler
+- **Staking Rewards**: Token stake ederek ek gelir
+- **VIP Avantajları**: Özel analiz ve öncelikli destek
+
+### 🎨 Modern UI/UX
 - **Responsive Tasarım**: Mobil ve masaüstü uyumlu
+- **Dark/Light Mode**: Tema seçenekleri
+- **Gelişmiş Grafikler**: Interactive trading charts
+- **Real-time Data**: WebSocket ile canlı güncellemeler
 
 ## 🛠️ Teknolojiler
 
@@ -84,14 +98,23 @@ Proje otomatik olarak GitHub Actions ile GitHub Pages'e deploy edilir:
 ```
 /app
   /admin          # Admin paneli
-  /auth           # Kimlik doğrulama
-  /dashboard      # Kullanıcı paneli
-  /token          # KK99 Token sayfası
+  /auth           # Kimlik doğrulama (login/register)
+  /dashboard      # Ana kullanıcı paneli
+  /markets        # 7 farklı piyasa türü
+    /spot         # Spot trading
+    /futures      # Vadeli işlemler
+    /options      # Opsiyon işlemleri
+    /forex        # Döviz işlemleri
+    /stocks       # Hisse senedi
+    /commodities  # Emtia
+    /indices      # Endeksler
+  /wallet         # KK99 token cüzdanı
+  /token          # KK99 Token bilgileri
   /trade          # Trading arayüzü
 /components       # React bileşenleri
-  /ui            # UI bileşenleri
+  /ui            # UI bileşenleri (card, button, input, etc.)
+  /layout        # Layout bileşenleri (navbar)
 /lib             # Yardımcı fonksiyonlar
-/docs            # Dokümantasyon
 /public          # Statik dosyalar
 ```
 
