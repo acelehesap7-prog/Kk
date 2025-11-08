@@ -1,62 +1,116 @@
-'use client'import * as React from "react"
+'use client''use client'
 
-import { Slot } from "@radix-ui/react-slot"
 
-import * as React from 'react'import { cva, type VariantProps } from "class-variance-authority"
 
-import { cva, type VariantProps } from 'class-variance-authority'import { cn } from "@/lib/utils"
+import * as React from 'react'import * as React from 'react'
 
-import { cn } from '@/lib/utils'
+import { Slot } from '@radix-ui/react-slot'import { Slot } from '@radix-ui/react-slot'
 
-const buttonVariants = cva(
+import { cva, type VariantProps } from 'class-variance-authority'import { cva, type VariantProps } from 'class-variance-authority'
 
-const buttonVariants = cva(  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+import { cn } from '@/lib/utils'import { cn } from '@/lib/utils'
 
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',  {
 
-  {    variants: {
 
-    variants: {      variant: {
+const buttonVariants = cva(import { cn } from '@/lib/utils'
 
-      variant: {        default:
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
 
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+  {const buttonVariants = cva(
 
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',        destructive:
+    variants: {  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
 
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+      variant: {
 
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',        outline:
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',  {
 
-        ghost: 'hover:bg-accent hover:text-accent-foreground',          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        destructive:
 
-        link: 'text-primary underline-offset-4 hover:underline',        secondary:
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90',  {    variants: {
 
-      },          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        outline:
 
-      size: {        ghost: "hover:bg-accent hover:text-accent-foreground",
+          'border border-input bg-background hover:bg-accent hover:text-accent-foreground',    variants: {      variant: {
 
-        default: 'h-10 px-4 py-2',        link: "text-primary underline-offset-4 hover:underline",
+        secondary:
 
-        sm: 'h-9 rounded-md px-3',      },
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80',      variant: {        default:
 
-        lg: 'h-11 rounded-md px-8',      size: {
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
 
-        icon: 'h-10 w-10',        default: "h-9 px-4 py-2",
+        link: 'text-primary underline-offset-4 hover:underline',        default: 'bg-primary text-primary-foreground hover:bg-primary/90',          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
 
-      },        sm: "h-8 rounded-md px-3 text-xs",
+      },
 
-    },        lg: "h-10 rounded-md px-8",
+      size: {        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',        destructive:
 
-    defaultVariants: {        icon: "h-9 w-9",
+        default: 'h-10 px-4 py-2',
 
-      variant: 'default',      },
+        sm: 'h-9 rounded-md px-3',        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
 
-      size: 'default',    },
+        lg: 'h-11 rounded-md px-8',
 
-    },    defaultVariants: {
+        icon: 'h-10 w-10',        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',        outline:
 
-  }      variant: "default",
+      },
+
+    },        ghost: 'hover:bg-accent hover:text-accent-foreground',          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+
+    defaultVariants: {
+
+      variant: 'default',        link: 'text-primary underline-offset-4 hover:underline',        secondary:
+
+      size: 'default',
+
+    },      },          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+
+  }
+
+)      size: {        ghost: "hover:bg-accent hover:text-accent-foreground",
+
+
+
+export interface ButtonProps        default: 'h-10 px-4 py-2',        link: "text-primary underline-offset-4 hover:underline",
+
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+
+    VariantProps<typeof buttonVariants> {        sm: 'h-9 rounded-md px-3',      },
+
+  asChild?: boolean
+
+}        lg: 'h-11 rounded-md px-8',      size: {
+
+
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(        icon: 'h-10 w-10',        default: "h-9 px-4 py-2",
+
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+
+    const Comp = asChild ? Slot : 'button'      },        sm: "h-8 rounded-md px-3 text-xs",
+
+    return (
+
+      <Comp    },        lg: "h-10 rounded-md px-8",
+
+        className={cn(buttonVariants({ variant, size, className }))}
+
+        ref={ref}    defaultVariants: {        icon: "h-9 w-9",
+
+        {...props}
+
+      />      variant: 'default',      },
+
+    )
+
+  }      size: 'default',    },
+
+)
+
+Button.displayName = 'Button'    },    defaultVariants: {
+
+
+
+export { Button, buttonVariants }  }      variant: "default",
 
 )      size: "default",
 

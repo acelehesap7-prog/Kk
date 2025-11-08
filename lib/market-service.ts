@@ -1,76 +1,76 @@
-import { WebSocket } from 'ws'import { WebSocket } from 'ws'import { WebSocket } from 'ws'
+'use client'import { WebSocket } from 'ws'import { WebSocket } from 'ws'import { WebSocket } from 'ws'
 
-import { z } from 'zod'
+
+
+import { z } from 'zod'import { z } from 'zod'
+
+import { WebSocket } from 'ws'
 
 import axios from 'axios'import { z } from 'zod'import { z } from 'zod'
 
-import ccxt from 'ccxt'
+const MarketSchema = z.object({
 
-import * as dotenv from 'dotenv'import axios from 'axios'import axios from 'axios'
+  type: z.enum(['crypto', 'crypto-futures', 'crypto-options', 'forex', 'stocks', 'bonds', 'etf', 'commodities', 'indices']),import ccxt from 'ccxt'
 
+  symbol: z.string(),
 
+  name: z.string(),import * as dotenv from 'dotenv'import axios from 'axios'import axios from 'axios'
 
-dotenv.config()import ccxt from 'ccxt'import ccxt from 'ccxt'
+  lastPrice: z.number(),
 
+  priceChange: z.number(),
 
+  priceChangePercent: z.number(),
 
-// Market Typesimport * as dotenv from 'dotenv'import Finnhub from 'finnhub'
+  volume: z.number().optional(),dotenv.config()import ccxt from 'ccxt'import ccxt from 'ccxt'
 
-export type MarketType = 
+  high24h: z.number(),
 
-  | 'crypto' import * as dotenv from 'dotenv'
+  low24h: z.number(),
 
-  | 'crypto-futures'
+  open24h: z.number(),
 
-  | 'crypto-options'dotenv.config()
+  exchange: z.string().optional(),// Market Typesimport * as dotenv from 'dotenv'import Finnhub from 'finnhub'
 
-  | 'forex'
+  category: z.string().optional()
 
-  | 'stocks'dotenv.config()
-
-  | 'bonds'
-
-  | 'etf'// Market Tipleri
-
-  | 'commodities'
-
-  | 'indices'export type MarketType = // API İstemcileri
+})export type MarketType = 
 
 
 
-// WebSocket Message Types    | 'crypto' const binance = new ccxt.binance({
+export type Market = z.infer<typeof MarketSchema>  | 'crypto' import * as dotenv from 'dotenv'
 
-interface WSMessage {
 
-  type: 'ticker' | 'trade'  | 'crypto-futures'  apiKey: process.env.BINANCE_API_KEY,
 
-  symbol: string 
+interface WSMessage {  | 'crypto-futures'
 
-  data: any  | 'crypto-options'  secret: process.env.BINANCE_API_SECRET
+  type: 'ticker' | 'trade'
 
-}
+  symbol: string  | 'crypto-options'dotenv.config()
 
-  | 'forex'})
+  data: any 
 
-// WebSocket Manager
+}  | 'forex'
 
-class WSManager {  | 'stocks'
+
+
+class WSManager {  | 'stocks'dotenv.config()
 
   private connections: Map<string, WebSocket> = new Map()
 
-  private messageHandlers: ((msg: WSMessage) => void)[] = []  | 'bonds'const deribit = new ccxt.deribit({
+  private messageHandlers: ((msg: WSMessage) => void)[] = []  | 'bonds'
 
 
 
-  constructor() {}  | 'etf'  apiKey: process.env.DERIBIT_API_KEY,
+  constructor() {}  | 'etf'// Market Tipleri
 
 
 
-  connectBinance(symbols: string[]) {  | 'commodities'  secret: process.env.DERIBIT_API_SECRET
+  connectBinance(symbols: string[]) {  | 'commodities'
 
     const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/')
 
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`)  | 'indices'})
+    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`)  | 'indices'export type MarketType = // API İstemcileri
 
 
 
@@ -78,103 +78,279 @@ class WSManager {  | 'stocks'
 
       try {
 
-        const raw = JSON.parse(data)// WebSocket Mesaj Tiplericonst finnhubClient = Finnhub.ApiClient.instance
+        const raw = JSON.parse(data)// WebSocket Message Types    | 'crypto' const binance = new ccxt.binance({
 
         const msg: WSMessage = {
 
-          type: 'ticker',interface WSMessage {const finnhubApi = new Finnhub.DefaultApi()
+          type: 'ticker',interface WSMessage {
 
           symbol: raw.s,
 
-          data: {  type: 'ticker' | 'trade'finnhubClient.authentications['api_key'].apiKey = process.env.FINNHUB_API_KEY
+          data: {  type: 'ticker' | 'trade'  | 'crypto-futures'  apiKey: process.env.BINANCE_API_KEY,
 
             lastPrice: parseFloat(raw.c),
 
-            priceChange: parseFloat(raw.p),  symbol: string
+            priceChange: parseFloat(raw.p),  symbol: string 
 
             priceChangePercent: parseFloat(raw.P),
 
-            volume: parseFloat(raw.v),  data: any// WebSocket Yöneticisi
+            volume: parseFloat(raw.v),  data: any  | 'crypto-options'  secret: process.env.BINANCE_API_SECRET
 
-            high24h: parseFloat(raw.h), 
+            high24h: parseFloat(raw.h),
 
-            low24h: parseFloat(raw.l),}class WSManager {
+            low24h: parseFloat(raw.l),}
 
             open24h: parseFloat(raw.o)
 
-          }  private connections: Map<string, WebSocket> = new Map()
+          }  | 'forex'})
 
         }
 
-        this.messageHandlers.forEach(handler => handler(msg))// WebSocket Yöneticisi  private messageHandlers: ((msg: WSMessage) => void)[] = []
+        this.messageHandlers.forEach(handler => handler(msg))// WebSocket Manager
 
       } catch (err) {
 
-        console.error('Binance WebSocket error:', err)class WSManager {
+        console.error('Binance WebSocket error:', err)class WSManager {  | 'stocks'
 
       }
 
-    })  private connections: Map<string, WebSocket> = new Map()  constructor() {}
+    })  private connections: Map<string, WebSocket> = new Map()
 
 
 
-    this.connections.set('binance', ws)  private messageHandlers: ((msg: WSMessage) => void)[] = []
+    this.connections.set('binance', ws)  private messageHandlers: ((msg: WSMessage) => void)[] = []  | 'bonds'const deribit = new ccxt.deribit({
 
   }
 
-  connectBinance(symbols: string[]) {
-
-  connectDeribit(symbols: string[]) {
-
-    const ws = new WebSocket('wss://www.deribit.com/ws/api/v2')  constructor() {}    const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/')
 
 
+  onMessage(handler: (msg: WSMessage) => void) {
 
-    ws.on('open', () => {    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`)
+    this.messageHandlers.push(handler)  constructor() {}  | 'etf'  apiKey: process.env.DERIBIT_API_KEY,
 
-      symbols.forEach(symbol => {
+  }
 
-        ws.send(JSON.stringify({  connectBinance(symbols: string[]) {
 
-          jsonrpc: '2.0',
 
-          method: 'public/subscribe',    const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/')    ws.on('message', (data: string) => {
+  close() {
 
-          params: {
+    this.connections.forEach(ws => ws.close())  connectBinance(symbols: string[]) {  | 'commodities'  secret: process.env.DERIBIT_API_SECRET
+
+    this.connections.clear()
+
+  }    const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/')
+
+}
+
+    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`)  | 'indices'})
+
+export class MarketDataManager {
+
+  private wsManager: WSManager
+
+  private marketData: Map<string, Market> = new Map()
+
+  private updateCallbacks: ((markets: Market[]) => void)[] = []    ws.on('message', (data: string) => {
+
+
+
+  constructor() {      try {
+
+    this.wsManager = new WSManager()
+
+        const raw = JSON.parse(data)// WebSocket Mesaj Tiplericonst finnhubClient = Finnhub.ApiClient.instance
+
+    this.wsManager.onMessage((msg) => {
+
+      switch (msg.type) {        const msg: WSMessage = {
+
+        case 'ticker':
+
+        case 'trade':          type: 'ticker',interface WSMessage {const finnhubApi = new Finnhub.DefaultApi()
+
+          this.updateMarketData(msg.symbol, msg.data)
+
+          break          symbol: raw.s,
+
+      }
+
+    })          data: {  type: 'ticker' | 'trade'finnhubClient.authentications['api_key'].apiKey = process.env.FINNHUB_API_KEY
+
+  }
+
+            lastPrice: parseFloat(raw.c),
+
+  private updateMarketData(symbol: string, data: any) {
+
+    const existing = this.marketData.get(symbol)            priceChange: parseFloat(raw.p),  symbol: string
+
+    if (existing) {
+
+      this.marketData.set(symbol, { ...existing, ...data })            priceChangePercent: parseFloat(raw.P),
+
+      this.notifyUpdateCallbacks()
+
+    }            volume: parseFloat(raw.v),  data: any// WebSocket Yöneticisi
+
+  }
+
+            high24h: parseFloat(raw.h), 
+
+  private notifyUpdateCallbacks() {
+
+    const markets = Array.from(this.marketData.values())            low24h: parseFloat(raw.l),}class WSManager {
+
+    this.updateCallbacks.forEach(cb => cb(markets))
+
+  }            open24h: parseFloat(raw.o)
+
+
+
+  async connect() {          }  private connections: Map<string, WebSocket> = new Map()
+
+    await this.fetchInitialData()
+
+        }
+
+    // Dummy connect for now
+
+    this.wsManager.connectBinance(['BTCUSDT', 'ETHUSDT'])        this.messageHandlers.forEach(handler => handler(msg))// WebSocket Yöneticisi  private messageHandlers: ((msg: WSMessage) => void)[] = []
+
+  }
+
+      } catch (err) {
+
+  private async fetchInitialData() {
+
+    try {        console.error('Binance WebSocket error:', err)class WSManager {
+
+      // Dummy data for now
+
+      const dummyMarkets: Market[] = [      }
+
+        {
+
+          type: 'crypto',    })  private connections: Map<string, WebSocket> = new Map()  constructor() {}
+
+          symbol: 'BTCUSDT',
+
+          name: 'Bitcoin',
+
+          lastPrice: 35000,
+
+          priceChange: 1500,    this.connections.set('binance', ws)  private messageHandlers: ((msg: WSMessage) => void)[] = []
+
+          priceChangePercent: 4.5,
+
+          volume: 10000,  }
+
+          high24h: 36000,
+
+          low24h: 33500,  connectBinance(symbols: string[]) {
+
+          open24h: 33500,
+
+          exchange: 'Binance',  connectDeribit(symbols: string[]) {
+
+          category: 'Crypto'
+
+        },    const ws = new WebSocket('wss://www.deribit.com/ws/api/v2')  constructor() {}    const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/')
+
+        {
+
+          type: 'crypto',
+
+          symbol: 'ETHUSDT',
+
+          name: 'Ethereum',    ws.on('open', () => {    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`)
+
+          lastPrice: 2100,
+
+          priceChange: 100,      symbols.forEach(symbol => {
+
+          priceChangePercent: 5,
+
+          volume: 5000,        ws.send(JSON.stringify({  connectBinance(symbols: string[]) {
+
+          high24h: 2200,
+
+          low24h: 2000,          jsonrpc: '2.0',
+
+          open24h: 2000,
+
+          exchange: 'Binance',          method: 'public/subscribe',    const streams = symbols.map(s => `${s.toLowerCase()}@ticker`).join('/')    ws.on('message', (data: string) => {
+
+          category: 'Crypto'
+
+        }          params: {
+
+      ]
 
             channels: [`ticker.${symbol}.raw`]    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`)      try {
 
-          }
+      dummyMarkets.forEach(market => {
 
-        }))        const raw = JSON.parse(data)
+        this.marketData.set(market.symbol, market)          }
 
       })
 
-    })    ws.on('message', (data: string) => {        const msg: WSMessage = {
+        }))        const raw = JSON.parse(data)
+
+      this.notifyUpdateCallbacks()
+
+    } catch (err) {      })
+
+      console.error('Error fetching initial market data:', err)
+
+    }    })    ws.on('message', (data: string) => {        const msg: WSMessage = {
+
+  }
 
 
 
-    ws.on('message', (data: string) => {      try {          type: 'ticker',
+  onUpdate(callback: (markets: Market[]) => void) {
+
+    this.updateCallbacks.push(callback)    ws.on('message', (data: string) => {      try {          type: 'ticker',
+
+  }
 
       try {
 
-        const raw = JSON.parse(data)        const raw = JSON.parse(data)          symbol: raw.s,
+  getMarket(symbol: string): Market | undefined {
+
+    return this.marketData.get(symbol)        const raw = JSON.parse(data)        const raw = JSON.parse(data)          symbol: raw.s,
+
+  }
 
         if (raw.params?.channel?.startsWith('ticker')) {
 
-          const msg: WSMessage = {        const msg: WSMessage = {          data: {
+  getAllMarkets(): Market[] {
+
+    return Array.from(this.marketData.values())          const msg: WSMessage = {        const msg: WSMessage = {          data: {
+
+  }
 
             type: 'ticker', 
 
-            symbol: raw.params.data.instrument_name,          type: 'ticker',            lastPrice: parseFloat(raw.c),
+  getMarketsByType(type: MarketType): Market[] {
 
-            data: {
+    return this.getAllMarkets().filter(m => m.type === type)            symbol: raw.params.data.instrument_name,          type: 'ticker',            lastPrice: parseFloat(raw.c),
 
-              lastPrice: raw.params.data.last_price,          symbol: raw.s,            priceChange: parseFloat(raw.p),
+  }
 
-              priceChange: raw.params.data.price_change,
+}            data: {
 
-              volume: raw.params.data.stats.volume,          data: {            priceChangePercent: parseFloat(raw.P),
+
+
+export type MarketType = 'crypto' | 'crypto-futures' | 'crypto-options' | 'forex' | 'stocks' | 'bonds' | 'etf' | 'commodities' | 'indices'              lastPrice: raw.params.data.last_price,          symbol: raw.s,            priceChange: parseFloat(raw.p),
+
+
+
+const marketService = new MarketDataManager()              priceChange: raw.params.data.price_change,
+
+
+
+export default marketService              volume: raw.params.data.stats.volume,          data: {            priceChangePercent: parseFloat(raw.P),
 
               high24h: raw.params.data.stats.high,
 

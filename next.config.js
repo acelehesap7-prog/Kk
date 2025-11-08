@@ -12,8 +12,9 @@ const nextConfig = {
   },
   swcMinify: true,
   output: 'export',
-  basePath: '/Kk',
-  assetPrefix: '/Kk/',
+  basePath: '',
+  trailingSlash: true,
+  assetPrefix: ''
 }
 
 module.exports = nextConfig
