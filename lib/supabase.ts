@@ -4,10 +4,18 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-	// Fail early with a clear message so it's obvious when envs are missing
-	throw new Error(
-		'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.\nPlease add them to .env.local or set them in your deployment.'
+	// Do not throw during build/CI — that would make Actions fail when secrets are not yet set.
+	// Log a clear warning so it's obvious in runtime/CI logs that envs are missing.
+	// Runtime code should handle `undefined` supabase client accordingly.
+	// IMPORTANT: Add these to your GitHub repository secrets for production builds.
+	// See README or project maintainer for secret values.
+	// eslint-disable-next-line no-console
+	console.warn(
+		'WARNING: Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Supabase client will be undefined. Add secrets in repo settings to enable Supabase features.'
 	)
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Export client if envs exist, otherwise export undefined so build doesn't fail.
+export const supabase: any = (supabaseUrl && supabaseAnonKey)
+	? createClient(supabaseUrl, supabaseAnonKey)
+	: undefined
