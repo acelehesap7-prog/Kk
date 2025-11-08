@@ -5,13 +5,13 @@ const nextConfig = {
   distDir: "out",
   // Add trailing slashes for cleaner URLs
   trailingSlash: true,
-  // Use relative paths for assets since we are in a subdirectory
-  basePath: "/Kk",
-  assetPrefix: "/Kk",
+  // GitHub Pages deployment configuration
+  basePath: process.env.NODE_ENV === 'production' ? '/Kk' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/Kk/' : '',
   // Disable image optimization for static export
   images: {
     unoptimized: true,
-    domains: ['images.unsplash.com']
+    domains: ['images.unsplash.com', 'via.placeholder.com']
   },
   // Skip type checking during builds for faster deployment
   typescript: {
@@ -20,10 +20,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true
   },
-  swcMinify: true,
-  // experimental: {
-  //   appDir: true  // This is now stable in Next.js 14
-  // }
+  swcMinify: true
 };
 
 module.exports = nextConfig;
