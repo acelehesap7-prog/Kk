@@ -1,46 +1,88 @@
-name: Deploy to GitHub Pages
+name: Deploy to Productionname: Deploy to GitHub Pages
 
-on:
-  push:
-    branches: ["main"]
-  workflow_dispatch:
+
+
+on:on:
+
+  push:  push:
+
+    branches: [main]    branches: ["main"]
+
+  pull_request:  workflow_dispatch:
+
+    branches: [main]
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+jobs:  contents: read
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
+  build-and-deploy:  pages: write
+
+    runs-on: ubuntu-latest  id-token: write
+
+
+
+    steps:concurrency:
+
+      - name: Checkout repository  group: "pages"
+
+        uses: actions/checkout@v4  cancel-in-progress: false
+
+
+
+      - name: Setup Node.jsjobs:
+
+        uses: actions/setup-node@v4  build:
+
+        with:    runs-on: ubuntu-latest
+
+          node-version: '20'    steps:
+
+          cache: 'npm'      - name: Checkout
+
         uses: actions/checkout@v4
-      
-      - name: Setup Node
+
+      - name: Install dependencies      
+
+        run: npm ci      - name: Setup Node
+
         uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+
+      - name: Install Vercel CLI        with:
+
+        run: npm install --global vercel@latest          node-version: "20"
+
           cache: 'npm'
-          
-      - name: Install dependencies
+
+      - name: Pull Vercel Environment Information          
+
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}      - name: Install dependencies
+
         run: npm install
-        
-      - name: Build static site
-        run: npm run build
-        env:
-          NODE_ENV: production
+
+      - name: Build Project Artifacts        
+
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}      - name: Build static site
+
+        env:        run: npm run build
+
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}        env:
+
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}          NODE_ENV: production
+
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        
-      - name: Add .nojekyll file
-        run: touch ./out/.nojekyll
-        
-      - name: Remove CNAME if exists
+
+      - name: Deploy to Vercel          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}        
+
+        env:      - name: Add .nojekyll file
+
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}        run: touch ./out/.nojekyll
+
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}        
+
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}      - name: Remove CNAME if exists
         run: rm -f ./out/CNAME
         
       - name: Setup Pages
