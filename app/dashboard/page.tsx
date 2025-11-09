@@ -5,10 +5,49 @@ import { useRouter } from 'next/navigation'
 import { Card, Title, Text, BarChart, DonutChart, LineChart } from '@tremor/react'
 import { Icons } from '@/components/icons'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { supabase, type TablesRow } from '@/lib/supabase'
 import { getBalance } from '@/lib/payment-service'
 import { getMarketsByType } from '@/lib/market-service'
 import type { Market } from '@/lib/market-service'
+import { TrendingUp, TrendingDown, Activity, AlertTriangle, DollarSign, History, Wallet, ChartLineUp } from 'lucide-react'
+
+interface Position {
+  symbol: string;
+  size: number;
+  entry_price: number;
+  current_price: number;
+  pnl: number;
+  pnl_percentage: number;
+}
+
+interface DatabaseTrade {
+  id: string;
+  symbol: string;
+  type: string;
+  amount: number;
+  price: number;
+  status: string;
+  created_at: string;
+  user_id: string;
+}
+
+interface PortfolioItem {
+  token_symbol: string;
+  balance: number;
+  current_price: number;
+}
+
+interface TradeHistory {
+  id: string;
+  symbol: string;
+  type: 'buy' | 'sell';
+  amount: number;
+  price: number;
+  total: number;
+  created_at: string;
+  status: 'completed' | 'pending' | 'failed';
+}
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -17,22 +56,31 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<TablesRow['transactions'][]>([])
   const [markets, setMarkets] = useState<Market[]>([])
   const [portfolioData, setPortfolioData] = useState<any[]>([])
-  const [tradingHistory, setTradingHistory] = useState<any[]>([])
+  const [tradingHistory, setTradingHistory] = useState<TradeHistory[]>([])
+  const [positions, setPositions] = useState<Position[]>([])
+  const [profitAndLoss, setProfitAndLoss] = useState({
+    daily: 0,
+    weekly: 0,
+    monthly: 0,
+    total: 0
+  })
 
   useEffect(() => {
     loadDashboardData()
+    // Her 30 saniyede bir verileri güncelle
+    const interval = setInterval(loadDashboardData, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   async function loadDashboardData() {
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth/login')
         return
       }
 
-      // Get user profile
+      // Kullanıcı profili
       const { data: profile } = await supabase
         .from('users')
         .select('*')
@@ -41,11 +89,11 @@ export default function DashboardPage() {
 
       setUser(profile)
 
-      // Get balance
+      // Bakiye bilgisi
       const userBalance = await getBalance(user.id)
       setBalance(userBalance)
 
-      // Get recent transactions
+      // Son işlemler
       const { data: txs } = await supabase
         .from('transactions')
         .select('*')
@@ -55,11 +103,43 @@ export default function DashboardPage() {
 
       setTransactions(txs || [])
 
-      // Get market data
-      const cryptoMarkets = await getMarketsByType('crypto')
-      setMarkets(cryptoMarkets)
+      // Piyasa verileri
+      const allMarkets = await getMarketsByType('all')
+      setMarkets(allMarkets)
 
-      // Get portfolio data
+      // Portföy verileri
+      const { data: portfolioData } = await supabase
+        .from('token_balances')
+        .select('*')
+        .eq('user_id', user.id)
+
+      const formattedPortfolio = (portfolioData as PortfolioItem[] || []).map(item => ({
+        symbol: item.token_symbol,
+        value: item.balance * item.current_price
+      }))
+
+      setPortfolioData(formattedPortfolio)
+
+      // İşlem geçmişi
+      const { data: tradeData } = await supabase
+        .from('trades')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      const formattedTrades: TradeHistory[] = (tradeData as DatabaseTrade[] || []).map(trade => ({
+        id: trade.id,
+        symbol: trade.symbol,
+        type: trade.type as 'buy' | 'sell',
+        amount: trade.amount,
+        price: trade.price,
+        total: trade.amount * trade.price,
+        created_at: trade.created_at,
+        status: trade.status as 'completed' | 'pending' | 'failed'
+      }))
+
+      setTradingHistory(formattedTrades)
       const { data: portfolio } = await supabase
         .from('token_balances')
         .select('*')
@@ -92,9 +172,16 @@ export default function DashboardPage() {
               Hesabınızı ve işlemlerinizi buradan yönetin
             </p>
           </div>
-          <Button onClick={() => router.push('/trade')}>
-            İşlem Yap
-          </Button>
+          <div className="flex gap-4">
+            <Button variant="outline" onClick={() => router.push('/wallet')}>
+              <Wallet className="h-4 w-4 mr-2" />
+              Cüzdan
+            </Button>
+            <Button onClick={() => router.push('/trade')}>
+              <Activity className="h-4 w-4 mr-2" />
+              İşlem Yap
+            </Button>
+          </div>
         </div>
 
         {/* Quick Stats */}

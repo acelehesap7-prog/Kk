@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { 
   Wallet, 
   Send, 
@@ -19,114 +21,168 @@ import {
   EyeOff,
   Copy,
   ExternalLink,
-  Coins
+  Coins,
+  CheckCircle2,
+  AlertCircle,
+  QrCode,
+  ArrowRight,
+  Search,
+  Settings2 as Settings,
+  AlertTriangle,
+  ChevronRight,
+  History,
+  RefreshCw
 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import QRCode from 'qrcode.react'
+import { toast } from 'sonner'
+
+interface DBAsset {
+  user_id: string;
+  symbol: string;
+  name: string;
+  balance: number;
+  current_price: number;
+  price_change_24h: number;
+  icon: string;
+  deposit_address?: string;
+}
 
 interface Asset {
-  symbol: string
-  name: string
-  balance: number
-  value: number
-  change24h: number
-  icon: string
+  symbol: string;
+  name: string;
+  balance: number;
+  value: number;
+  change24h: number;
+  icon: string;
+  address?: string;
+}
+
+interface DBTransaction {
+  id: string;
+  user_id: string;
+  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';
+  amount: number;
+  asset: string;
+  status: 'pending' | 'completed' | 'failed';
+  created_at: string;
+  hash?: string;
+  from_address?: string;
+  to_address?: string;
 }
 
 interface Transaction {
-  id: string
-  type: 'deposit' | 'withdraw' | 'trade' | 'transfer'
-  asset: string
-  amount: number
-  value: number
-  timestamp: Date
-  status: 'completed' | 'pending' | 'failed'
+  id: string;
+  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';
+  amount: number;
+  asset: string;
+  value: number;
+  status: 'pending' | 'completed' | 'failed';
+  timestamp: string;
+  hash?: string;
+  from?: string;
+  to?: string;
+}
+
+interface DBWalletAddress {
+  user_id: string;
+  chain: string;
+  address: string;
+  memo?: string;
+  network: string;
+}
+
+interface WalletAddress {
+  chain: string;
+  address: string;
+  memo?: string;
+  network: string;
 }
 
 export default function WalletPage() {
+  const router = useRouter()
   const [assets, setAssets] = useState<Asset[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [totalBalance, setTotalBalance] = useState(0)
   const [hideBalances, setHideBalances] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
+  const [addresses, setAddresses] = useState<WalletAddress[]>([])
+  const [depositAddress, setDepositAddress] = useState<string>('')
+  const [showQR, setShowQR] = useState(false)
+  const [withdrawalAmount, setWithdrawalAmount] = useState('')
+  const [withdrawalAddress, setWithdrawalAddress] = useState('')
+  const [selectedChain, setSelectedChain] = useState('ETH')
+  const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    // Mock wallet data
-    const mockAssets: Asset[] = [
-      {
-        symbol: 'KK99',
-        name: 'KK Exchange Token',
-        balance: 5000,
-        value: 2500.00,
-        change24h: 5.25,
-        icon: '🪙'
-      },
-      {
-        symbol: 'USDT',
-        name: 'Tether USD',
-        balance: 1250.50,
-        value: 1250.50,
-        change24h: 0.01,
-        icon: '💵'
-      },
-      {
-        symbol: 'BTC',
-        name: 'Bitcoin',
-        balance: 0.0285,
-        value: 1231.63,
-        change24h: 2.45,
-        icon: '₿'
-      },
-      {
-        symbol: 'ETH',
-        name: 'Ethereum',
-        balance: 0.5420,
-        value: 1436.55,
-        change24h: -1.25,
-        icon: 'Ξ'
-      },
-      {
-        symbol: 'BNB',
-        name: 'Binance Coin',
-        balance: 2.15,
-        value: 645.75,
-        change24h: 3.15,
-        icon: '🔶'
-      }
-    ]
-
-    const mockTransactions: Transaction[] = [
-      {
-        id: '1',
-        type: 'deposit',
-        asset: 'USDT',
-        amount: 500,
-        value: 500,
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        status: 'completed'
-      },
-      {
-        id: '2',
-        type: 'trade',
-        asset: 'BTC',
-        amount: 0.0085,
-        value: 367.25,
-        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-        status: 'completed'
-      },
-      {
-        id: '3',
-        type: 'transfer',
-        asset: 'KK99',
-        amount: 1000,
-        value: 500,
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        status: 'completed'
-      }
-    ]
-
-    setAssets(mockAssets)
-    setTransactions(mockTransactions)
-    setTotalBalance(mockAssets.reduce((sum, asset) => sum + asset.value, 0))
+    loadWalletData()
   }, [])
+
+  async function loadWalletData() {
+    setLoading(true)
+    try {
+      // Kullanıcı kontrolü
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/auth/login')
+        return
+      }
+
+      // Varlık bilgileri
+      const { data: assetData } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('user_id', user.id)
+
+      const { data: assets } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (assets) {
+        const formattedAssets: Asset[] = assets.map((asset: DBAsset) => ({
+          symbol: asset.symbol,
+          name: asset.name,
+          balance: asset.balance,
+          value: asset.balance * asset.current_price,
+          change24h: asset.price_change_24h,
+          icon: asset.icon,
+          address: asset.deposit_address
+        }))
+
+        setAssets(formattedAssets)
+        const total = formattedAssets.reduce((acc, asset) => acc + asset.value, 0)
+        setTotalBalance(total)
+      }
+
+      // İşlem geçmişi
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (transactions) {
+        setTransactions(transactions as Transaction[])
+      }
+
+      // Cüzdan adresleri
+      const { data: addresses } = await supabase
+        .from('wallet_addresses')
+        .select('*')
+        .eq('user_id', user.id)
+
+      if (addresses) {
+        setAddresses(addresses as WalletAddress[])
+      }
+      } catch (error) {
+        console.error('Failed to load wallet data:', error) 
+        toast.error('Failed to load wallet data')
+      }
+  }, [router])
 
   const formatBalance = (balance: number) => {
     return hideBalances ? '****' : balance.toLocaleString()
@@ -136,22 +192,60 @@ export default function WalletPage() {
     return hideBalances ? '****' : `$${value.toLocaleString()}`
   }
 
+  const filteredAssets = assets.filter(asset =>
+    asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    asset.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address)
+    // Todo: Add toast notification
+  }
+
+  const handleDeposit = (asset: Asset) => {
+    setSelectedAsset(asset)
+    setShowQR(true)
+  }
+
+  const handleWithdraw = async () => {
+    if (!selectedAsset || !withdrawalAmount || !withdrawalAddress) return
+    
+    setLoading(true)
+    try {
+      // Implement withdrawal logic here
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Refresh data after successful withdrawal
+      await loadWalletData()
+    } catch (error) {
+      console.error('Withdrawal failed:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">My Wallet</h1>
-            <p className="text-lg text-muted-foreground">
-              Manage your digital assets and transactions
-            </p>
-          </div>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold">Varlıklarım</h1>
+          <p className="text-muted-foreground">
+            Varlıklarınızı yönetin ve işlem yapın
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
             onClick={() => setHideBalances(!hideBalances)}
           >
-            {hideBalances ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {hideBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push('/settings/wallet')}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Ayarlar
           </Button>
         </div>
       </div>
