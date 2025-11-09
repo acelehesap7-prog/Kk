@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { TrendingUp, TrendingDown, BarChart3, Coins, DollarSign, PieChart, Zap } from 'lucide-react'
+import { TrendingUp, TrendingDown, BarChart3, Coins, DollarSign, PieChart, Zap, Building, Activity, Landmark, Package } from 'lucide-react'
 
 // Market types configuration
 const marketTypes = [
@@ -29,7 +29,7 @@ const marketTypes = [
     id: 'options',
     name: 'Options Trading',
     description: 'Opsiyon sözleşmeleri',
-    icon: BarChart3,
+    icon: Activity,
     color: 'bg-purple-500',
     path: '/markets/options'
   },
@@ -45,7 +45,7 @@ const marketTypes = [
     id: 'stocks',
     name: 'Stock Trading',
     description: 'Hisse senedi işlemleri',
-    icon: PieChart,
+    icon: Building,
     color: 'bg-red-500',
     path: '/markets/stocks'
   },
@@ -64,6 +64,22 @@ const marketTypes = [
     icon: BarChart3,
     color: 'bg-indigo-500',
     path: '/markets/indices'
+  },
+  {
+    id: 'bonds',
+    name: 'Bonds & Treasury',
+    description: 'Tahvil ve bono işlemleri',
+    icon: Landmark,
+    color: 'bg-teal-500',
+    path: '/markets/bonds'
+  },
+  {
+    id: 'etf',
+    name: 'ETF Trading',
+    description: 'Exchange Traded Funds',
+    icon: Package,
+    color: 'bg-pink-500',
+    path: '/markets/etf'
   }
 ]
 
@@ -86,7 +102,7 @@ export default function MarketsPage() {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">KK Exchange Markets</h1>
         <p className="text-lg text-muted-foreground mb-6">
-          7 farklı piyasada profesyonel trading deneyimi
+          9 farklı piyasada profesyonel trading deneyimi
         </p>
         
         {/* Market Statistics */}
