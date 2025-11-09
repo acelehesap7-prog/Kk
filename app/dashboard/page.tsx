@@ -5,179 +5,330 @@ import { useRouter } from 'next/navigation'
 import { Card, Title, Text, BarChart, DonutChart, LineChart } from '@tremor/react'
 import { Icons } from '@/components/icons'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { supabase, type TablesRow } from '@/lib/supabase'
 import { getBalance } from '@/lib/payment-service'
-import { getMarketsByType } from '@/lib/market-service'
-import type { Market } from '@/lib/market-service'
-import { TrendingUp, TrendingDown, Activity, AlertTriangle, DollarSign, History, Wallet, ChartLineUp } from 'lucide-react'
+import { RealMarketService } from '@/lib/real-market-service'
+import { WalletService, type WalletConnection } from '@/lib/wallet-service'
+import { KK99Service, type KK99Balance } from '@/lib/kk99-service'
+import { Activity, AlertTriangle } from 'lucide-react'
 
-interface Position {
-  symbol: string;
-  size: number;
-  entry_price: number;
-  current_price: number;
-  pnl: number;
-  pnl_percentage: number;
-}
+import { QuickStatsCard } from '@/components/dashboard/QuickStatsCard'
+import { TransactionItem } from '@/components/dashboard/TransactionItem'
+import { DashboardState, Market, SafeUser, TokenBalance, Transaction } from '@/types/dashboard'
 
-interface DatabaseTrade {
-  id: string;
-  symbol: string;
-  type: string;
-  amount: number;
-  price: number;
-  status: string;
-  created_at: string;
-  user_id: string;
-}
-
-interface PortfolioItem {
-  token_symbol: string;
-  balance: number;
-  current_price: number;
-}
-
-interface TradeHistory {
-  id: string;
-  symbol: string;
-  type: 'buy' | 'sell';
-  amount: number;
-  price: number;
-  total: number;
-  created_at: string;
-  status: 'completed' | 'pending' | 'failed';
+const initialState: DashboardState = {
+  user: null,
+  balance: 0,
+  transactions: [],
+  markets: [],
+  tokenBalances: [],
+  walletConnection: null,
+  kk99Balance: {
+    balance: 0,
+    lockedBalance: 0,
+    stakingBalance: 0,
+    totalBalance: 0
+  },
+  loading: true
 }
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [user, setUser] = useState<TablesRow['users'] | null>(null)
-  const [balance, setBalance] = useState<number>(0)
-  const [transactions, setTransactions] = useState<TablesRow['transactions'][]>([])
-  const [markets, setMarkets] = useState<Market[]>([])
-  const [portfolioData, setPortfolioData] = useState<any[]>([])
-  const [tradingHistory, setTradingHistory] = useState<TradeHistory[]>([])
-  const [positions, setPositions] = useState<Position[]>([])
-  const [profitAndLoss, setProfitAndLoss] = useState({
-    daily: 0,
-    weekly: 0,
-    monthly: 0,
-    total: 0
-  })
+  const [state, setState] = useState<DashboardState>(initialState)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadDashboardData()
-    // Her 30 saniyede bir verileri güncelle
-    const interval = setInterval(loadDashboardData, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    let isMounted = true
+    let interval: NodeJS.Timeout
 
-  async function loadDashboardData() {
+    const loadData = async () => {
+      if (!isMounted) return
+
+      try {
+        const newState = await loadDashboardData()
+        if (isMounted) {
+          setState(prev => ({ ...prev, ...newState, loading: false }))
+          setError(null) // Başarılı yükleme durumunda hatayı temizle
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Dashboard verisi yüklenirken hata:', error)
+          setError('Veriler yüklenirken bir hata oluştu')
+          setState(prev => ({ ...prev, loading: false }))
+        }
+      }
+    }
+
+    loadData()
+    interval = setInterval(loadData, 30000)
+
+    return () => {
+      isMounted = false
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [router])
+
+  async function loadDashboardData(): Promise<Partial<DashboardState>> {
     try {
+      // Kullanıcı kimlik doğrulama kontrolü
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth/login')
-        return
+        return {}
       }
 
-      // Kullanıcı profili
+      // Kullanıcı profili kontrolü
       const { data: profile } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      setUser(profile)
+      if (!profile) {
+        setError('Kullanıcı profili bulunamadı')
+        return {}
+      }
 
-      // Bakiye bilgisi
-      const userBalance = await getBalance(user.id)
-      setBalance(userBalance)
+      // Paralel veri yükleme
+      try {
+        const [balance, txs, markets, walletData] = await Promise.all([
+          loadBalanceData(user.id),
+          loadTransactionData(user.id),
+          loadMarketData(),
+          loadWalletData()
+        ])
 
-      // Son işlemler
-      const { data: txs } = await supabase
+        return {
+          user: profile as SafeUser,
+          balance,
+          transactions: txs,
+          markets,
+          ...walletData,
+          loading: false
+        }
+
+      } catch (loadErr) {
+        console.error('Veri yükleme hatası:', loadErr)
+        setError('Veriler yüklenirken bir hata oluştu')
+        
+        // Hata durumunda varsayılan değerlerle devam et
+        return {
+          user: profile as SafeUser,
+          balance: 0,
+          transactions: [],
+          markets: [],
+          tokenBalances: [],
+          walletConnection: null,
+          kk99Balance: {
+            balance: 0,
+            lockedBalance: 0,
+            stakingBalance: 0,
+            totalBalance: 0
+          },
+          loading: false
+        }
+      }
+    } catch (authErr) {
+      console.error('Kimlik doğrulama hatası:', authErr)
+      setError('Oturum bilgileriniz yüklenirken hata oluştu')
+      router.push('/auth/login')
+      return {}
+    }
+  }
+
+  async function loadBalanceData(userId: string): Promise<number> {
+    try {
+      return await getBalance(userId)
+    } catch (error) {
+      console.error('Bakiye bilgisi yüklenirken hata:', error)
+      return 0
+    }
+  }
+
+  async function loadTransactionData(userId: string): Promise<Transaction[]> {
+    try {
+      const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(5)
 
-      setTransactions(txs || [])
+      if (error) {
+        console.error('İşlem verisi yüklenirken hata:', error)
+        return []
+      }
 
-      // Piyasa verileri
-      const allMarkets = await getMarketsByType('all')
-      setMarkets(allMarkets)
-
-      // Portföy verileri
-      const { data: portfolioData } = await supabase
-        .from('token_balances')
-        .select('*')
-        .eq('user_id', user.id)
-
-      const formattedPortfolio = (portfolioData as PortfolioItem[] || []).map(item => ({
-        symbol: item.token_symbol,
-        value: item.balance * item.current_price
-      }))
-
-      setPortfolioData(formattedPortfolio)
-
-      // İşlem geçmişi
-      const { data: tradeData } = await supabase
-        .from('trades')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      const formattedTrades: TradeHistory[] = (tradeData as DatabaseTrade[] || []).map(trade => ({
-        id: trade.id,
-        symbol: trade.symbol,
-        type: trade.type as 'buy' | 'sell',
-        amount: trade.amount,
-        price: trade.price,
-        total: trade.amount * trade.price,
-        created_at: trade.created_at,
-        status: trade.status as 'completed' | 'pending' | 'failed'
-      }))
-
-      setTradingHistory(formattedTrades)
-      const { data: portfolio } = await supabase
-        .from('token_balances')
-        .select('*')
-        .eq('user_id', user.id)
-
-      setPortfolioData(portfolio || [])
-
-      // Get trading history
-      const { data: trades } = await supabase
-        .from('trades')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      setTradingHistory(trades || [])
+      return (data || []) as Transaction[]
     } catch (error) {
-      console.error('Error loading dashboard:', error)
+      console.error('İşlem verisi yüklenirken hata:', error)
+      return []
     }
+  }
+
+  async function loadMarketData(): Promise<Market[]> {
+    try {
+      const marketService = RealMarketService.getInstance()
+      
+      const marketRequests = [
+        { symbol: 'BTC/USDT', type: 'spot', marketType: 'crypto' },
+        { symbol: 'EUR/USD', type: 'forex', marketType: 'forex' },
+        { symbol: 'AAPL', type: 'stocks', marketType: 'stocks' }
+      ]
+
+      const results = await Promise.all(
+        marketRequests.map(({ symbol, type }) => 
+          marketService.getMarketData(symbol, type)
+            .catch(error => {
+              console.error(`${symbol} verisi yüklenirken hata:`, error)
+              return null
+            })
+        )
+      )
+
+      return results
+        .map((data, index) => {
+          if (!data) return null
+          const { symbol, marketType } = marketRequests[index]
+          return {
+            symbol,
+            price: data.price,
+            change24h: data.changePercent,
+            volume24h: data.volume,
+            high24h: data.high24h,
+            low24h: data.low24h,
+            type: marketType
+          }
+        })
+        .filter((item): item is Market => item !== null)
+    } catch (error) {
+      console.error('Piyasa verileri yüklenirken hata:', error)
+      return []
+    }
+  }
+
+  async function loadWalletData(): Promise<{
+    walletConnection: WalletConnection | null;
+    kk99Balance: KK99Balance;
+    tokenBalances: TokenBalance[];
+  }> {
+    try {
+      const walletService = WalletService.getInstance()
+      const kk99Service = KK99Service.getInstance()
+
+      let connection: WalletConnection | null = null
+      try {
+        connection = await walletService.connectMetaMask()
+      } catch (walletErr) {
+        console.error('MetaMask bağlantısı başarısız:', walletErr)
+      }
+
+      if (!connection) {
+        return {
+          walletConnection: null,
+          kk99Balance: initialState.kk99Balance,
+          tokenBalances: []
+        }
+      }
+
+      try {
+        const [kk99Data, tokenBalances] = await Promise.all([
+          kk99Service.getKK99Balance(connection.address)
+            .catch(err => {
+              console.error('KK99 bakiye bilgisi alınamadı:', err)
+              return null
+            }),
+          loadTokenBalances(connection.address)
+        ])
+
+        return {
+          walletConnection: connection,
+          kk99Balance: kk99Data || initialState.kk99Balance,
+          tokenBalances
+        }
+      } catch (dataErr) {
+        console.error('Token verileri yüklenirken hata:', dataErr)
+        return {
+          walletConnection: connection,
+          kk99Balance: initialState.kk99Balance,
+          tokenBalances: []
+        }
+      }
+    } catch (error) {
+      console.error('Cüzdan verisi yüklenirken hata:', error)
+      return {
+        walletConnection: null,
+        kk99Balance: initialState.kk99Balance,
+        tokenBalances: []
+      }
+    }
+  }
+
+  async function loadTokenBalances(address: string): Promise<TokenBalance[]> {
+    try {
+      const { data: tokens, error } = await supabase
+        .from('token_balances')
+        .select('*')
+        .eq('user_id', address) as { data: TablesRow['token_balances'][] | null, error: any }
+
+      if (error) {
+        console.error('Token bakiyeleri yüklenirken hata:', error)
+        return []
+      }
+
+      return (tokens || []).map(item => ({
+        token: item.token,
+        balance: item.balance,
+        value: item.balance * item.locked_balance // Örnek değer hesaplama
+      }))
+    } catch (error) {
+      console.error('Token bakiyeleri yüklenirken hata:', error)
+      return []
+    }
+  }
+
+  if (state.loading) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] flex-col items-center justify-center">
+        <Icons.spinner className="h-8 w-8 animate-spin" />
+        <Text className="mt-4">Yükleniyor...</Text>
+      </div>
+    )
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-500">
+          <div className="flex items-center">
+            <AlertTriangle className="mr-2 h-5 w-5" />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="grid gap-6 mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Hoş Geldiniz, {user?.name}</h1>
+            <h1 className="text-2xl font-bold">
+              Hoş Geldiniz, {state.user?.first_name || state.user?.email}
+            </h1>
             <p className="text-muted-foreground">
               Hesabınızı ve işlemlerinizi buradan yönetin
             </p>
           </div>
           <div className="flex gap-4">
-            <Button variant="outline" onClick={() => router.push('/wallet')}>
-              <Wallet className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              onClick={() => router.push('/wallet')}
+            >
+              <Icons.Balance className="h-4 w-4 mr-2" />
               Cüzdan
             </Button>
-            <Button onClick={() => router.push('/trade')}>
+            <Button onClick={() => router.push('/markets')}>
               <Activity className="h-4 w-4 mr-2" />
               İşlem Yap
             </Button>
@@ -186,80 +337,62 @@ export default function DashboardPage() {
 
         {/* Quick Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-2">
-              <Icons.DollarSign className="h-4 w-4 text-muted-foreground" />
-              <Text>Toplam Bakiye</Text>
-            </div>
-            <Title className="mt-2">${balance.toFixed(2)}</Title>
-          </Card>
+          <QuickStatsCard
+            icon={<Icons.Money className="h-4 w-4 text-muted-foreground" />}
+            title="Toplam Bakiye"
+            value={state.balance}
+            valuePrefix="$"
+          />
 
-          <Card className="p-4">
-            <div className="flex items-center gap-2">
-              <Icons.TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <Text>Açık İşlemler</Text>
-            </div>
-            <Title className="mt-2">{tradingHistory.filter(t => t.status === 'pending').length}</Title>
-          </Card>
+          <QuickStatsCard
+            icon={<Icons.Crypto className="h-4 w-4 text-muted-foreground" />}
+            title="KK99 Token"
+            value={state.kk99Balance.balance}
+          />
 
-          <Card className="p-4">
-            <div className="flex items-center gap-2">
-              <Icons.ChartLine className="h-4 w-4 text-muted-foreground" />
-              <Text>24s Hacim</Text>
-            </div>
-            <Title className="mt-2">
-              ${tradingHistory
-                .filter(t => {
-                  const date = new Date(t.created_at)
-                  const now = new Date()
-                  return now.getTime() - date.getTime() < 24 * 60 * 60 * 1000
-                })
-                .reduce((acc, t) => acc + t.amount, 0)
-                .toFixed(2)}
-            </Title>
-          </Card>
+          <QuickStatsCard
+            icon={<Icons.Trend className="h-4 w-4 text-muted-foreground" />}
+            title="Stake Edilen"
+            value={state.kk99Balance.stakingBalance}
+          />
 
-          <Card className="p-4">
-            <div className="flex items-center gap-2">
-              <Icons.Token className="h-4 w-4 text-muted-foreground" />
-              <Text>KK99 Token</Text>
-            </div>
-            <Title className="mt-2">
-              {portfolioData
-                .find(p => p.token === 'KK99')
-                ?.balance || 0}
-            </Title>
-          </Card>
+          <QuickStatsCard
+            icon={<Icons.Chart className="h-4 w-4 text-muted-foreground" />}
+            title="24s Hacim"
+            value={state.markets.reduce((acc, m) => acc + m.volume24h, 0)}
+            valuePrefix="$"
+          />
         </div>
       </div>
 
       {/* Charts */}
       <div className="grid gap-6 mb-8 lg:grid-cols-2">
         <Card>
-          <Title>Portföy Dağılımı</Title>
-          <DonutChart
+          <Title>Piyasa Özeti</Title>
+          <LineChart
             className="mt-4 h-64"
-            data={portfolioData.map(p => ({
-              name: p.token,
-              value: p.balance
+            data={state.markets.map(m => ({
+              name: m.symbol,
+              Fiyat: m.price,
+              Değişim: m.change24h
             }))}
-            category="value"
             index="name"
-            colors={['blue', 'emerald', 'yellow', 'purple']}
+            categories={['Fiyat', 'Değişim']}
+            colors={['blue', 'green']}
           />
         </Card>
 
         <Card>
-          <Title>İşlem Geçmişi</Title>
-          <LineChart
+          <Title>Token Dağılımı</Title>
+          <DonutChart
             className="mt-4 h-64"
-            data={tradingHistory.map(t => ({
-              date: new Date(t.created_at).toLocaleDateString(),
-              amount: t.amount
+            data={state.tokenBalances.map(t => ({
+              name: t.token,
+              value: t.value
             }))}
-            index="date"
-            categories={['amount']}
-            colors={['blue']}
+            category="value"
+            index="name"
+            colors={['blue', 'green', 'yellow', 'purple']}
           />
         </Card>
       </div>
@@ -269,35 +402,11 @@ export default function DashboardPage() {
         <Card>
           <Title>Son İşlemler</Title>
           <div className="mt-4 divide-y">
-            {transactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="py-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-4">
-                  {tx.type === 'deposit' ? (
-                    <Icons.ArrowRight className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Icons.ArrowRight className="h-4 w-4 text-red-500" />
-                  )}
-                  <div>
-                    <Text>
-                      {tx.type === 'deposit' ? 'Yatırma' : 'Çekme'}
-                    </Text>
-                    <Text className="text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleString()}
-                    </Text>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <Text className={tx.type === 'deposit' ? 'text-green-500' : 'text-red-500'}>
-                    {tx.type === 'deposit' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
-                  </Text>
-                  <Text className="text-muted-foreground">
-                    {tx.status === 'completed' ? 'Tamamlandı' : tx.status === 'pending' ? 'Bekliyor' : 'Başarısız'}
-                  </Text>
-                </div>
-              </div>
+            {state.transactions.map((transaction) => (
+              <TransactionItem 
+                key={transaction.id} 
+                transaction={transaction} 
+              />
             ))}
           </div>
         </Card>

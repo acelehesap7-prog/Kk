@@ -1,7 +1,10 @@
 'use client'
 
 import {
+  ArrowLeft,
   ArrowRight,
+  ArrowRightFromLine,
+  ArrowLeftFromLine,
   Bitcoin,
   ChevronLeft,
   ChevronRight,
@@ -30,12 +33,12 @@ import {
   type Icon as LucideIcon,
 } from "lucide-react"
 
-export type Icon = LucideIcon
+export type Icon = typeof LucideIcon
 
 export const Icons = {
   Logo: Bitcoin,
   Close: X,
-  Spinner: Loader2,
+  spinner: Loader2,
   ChevronLeft,
   ChevronRight,
   Trash,
@@ -48,6 +51,13 @@ export const Icons = {
   Add: Plus,
   Warning: HelpCircle,
   User,
+  ArrowIn: ArrowLeftFromLine,
+  ArrowOut: ArrowRightFromLine,
+  Money: DollarSign,
+  Crypto: Bitcoin,
+  Balance: Wallet,
+  Chart: LineChart,
+  Trend: TrendingUp,
   ArrowRight,
   Help: HelpCircle,
   Pizza,
