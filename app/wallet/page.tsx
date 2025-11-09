@@ -35,7 +35,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import QRCode from 'qrcode.react'
+import { QRCodeSVG } from 'qrcode.react'
 import { toast } from 'sonner'
 
 interface DBAsset {
@@ -118,7 +118,7 @@ export default function WalletPage() {
 
   useEffect(() => {
     loadWalletData()
-  }, [])
+  }, []);
 
   async function loadWalletData() {
     setLoading(true)
@@ -181,8 +181,10 @@ export default function WalletPage() {
       } catch (error) {
         console.error('Failed to load wallet data:', error) 
         toast.error('Failed to load wallet data')
+      } finally {
+        setLoading(false)
       }
-  }, [router])
+  }, [])
 
   const formatBalance = (balance: number) => {
     return hideBalances ? '****' : balance.toLocaleString()
