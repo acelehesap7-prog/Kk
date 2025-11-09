@@ -10,6 +10,10 @@ const nextConfig = {
     unoptimized: true,
     domains: ['images.unsplash.com', 'via.placeholder.com']
   },
+  // Module import aliases
+  experimental: {
+    appDir: true,
+  },
   // Skip type checking during builds for faster deployment
   typescript: {
     ignoreBuildErrors: true

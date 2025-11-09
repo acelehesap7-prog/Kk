@@ -1,8 +1,8 @@
 export interface IMarketService {
   getMarketData(symbol: string, marketType: string): Promise<MarketData>
   getOrderBook(symbol: string, marketType: string): Promise<OrderBook>
-  getCryptoMarkets(): Promise<MarketData[]>
   getForexRates(): Promise<MarketData[]>
+  getCryptoMarkets(): Promise<MarketData[]>
   getStockMarkets(): Promise<MarketData[]>
   getFuturesMarkets(): Promise<MarketData[]>
   getCommoditiesMarkets(): Promise<MarketData[]>
@@ -26,7 +26,9 @@ export interface MarketData {
 
 export interface OrderBook {
   symbol: string
-  bids: [number, number][] // [fiyat, miktar]
-  asks: [number, number][] // [fiyat, miktar]
+  bids: [number, number][] // [price, amount]
+  asks: [number, number][] // [price, amount]
   timestamp: number
 }
+
+export type MarketType = 'crypto' | 'forex' | 'stocks' | 'futures' | 'commodities' | 'indices' | 'options' | 'bonds' | 'etf'

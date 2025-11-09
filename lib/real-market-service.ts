@@ -11,8 +11,21 @@ const exchanges = {
   kucoin: new ccxt.kucoin(),
 }
 
+// Market type to exchange mapping 
+const marketToExchange: Record<string, keyof typeof exchanges> = {
+  crypto: 'binance',
+  forex: 'kraken', 
+  stocks: 'kucoin',
+  futures: 'binance',
+  commodities: 'kraken',
+  indices: 'kucoin', 
+  options: 'binance',
+  bonds: 'kraken',
+  etf: 'kucoin'
+}
+
 export class RealMarketService extends MarketService {
-  private static instance: RealMarketService
+  private static instance: RealMarketService | null = null
   private marketData: Map<string, MarketData> = new Map()
 
   private constructor() {
@@ -28,9 +41,12 @@ export class RealMarketService extends MarketService {
   }
 
   private async initializeExchanges() {
-    // Load markets for each exchange
-    for (const exchange of Object.values(exchanges)) {
-      await exchange.loadMarkets()
+    try {
+      await Promise.all(
+        Object.values(exchanges).map(exchange => exchange.loadMarkets())
+      )
+    } catch (error) {
+      console.error('Error initializing exchanges:', error)
     }
   }
 
@@ -39,47 +55,40 @@ export class RealMarketService extends MarketService {
     let data = this.marketData.get(key)
 
     if (!data || Date.now() - data.timestamp > 10000) { // Refresh every 10 seconds
-      data = await this.fetchMarketData(symbol, marketType)
-      this.marketData.set(key, data)
+      try {
+        const exchange = this.getExchangeForMarket(marketType)
+        const ticker = await exchange.fetchTicker(symbol)
+        const newData: MarketData = {
+          symbol,
+          price: ticker.last || 0,
+          change: ticker.change || 0,
+          changePercent: ticker.percentage || 0,
+          volume: ticker.baseVolume || 0,
+          high24h: ticker.high || 0,
+          low24h: ticker.low || 0,
+          timestamp: Date.now(),
+          marketType
+        }
+        this.marketData.set(key, newData)
+        data = newData
+      } catch (error) {
+        console.error(`Error fetching market data for ${symbol}:`, error)
+        throw error
+      }
     }
 
     return data
-  }
-
-  private async fetchMarketData(symbol: string, marketType: string): Promise<MarketData> {
-    try {
-      // Select appropriate exchange based on market type
-      const exchange = this.getExchangeForMarket(marketType)
-      
-      const ticker = await exchange.fetchTicker(symbol)
-      
-      return {
-        symbol,
-        price: ticker.last,
-        change: ticker.change || 0,
-        changePercent: ticker.percentage || 0,
-        volume: ticker.baseVolume || 0,
-        high24h: ticker.high || 0,
-        low24h: ticker.low || 0,
-        timestamp: Date.now(),
-        marketType
-      }
-    } catch (error) {
-      console.error(`Error fetching market data for ${symbol}:`, error)
-      throw error
-    }
   }
 
   async getOrderBook(symbol: string, marketType: string): Promise<OrderBook> {
     try {
       const exchange = this.getExchangeForMarket(marketType)
       const orderbook = await exchange.fetchOrderBook(symbol)
-
       return {
         symbol,
         bids: orderbook.bids,
         asks: orderbook.asks,
-        timestamp: Date.now()
+        timestamp: orderbook.timestamp || Date.now()
       }
     } catch (error) {
       console.error(`Error fetching order book for ${symbol}:`, error)
@@ -87,24 +96,15 @@ export class RealMarketService extends MarketService {
     }
   }
 
-  private getExchangeForMarket(marketType: string): any {
-    switch (marketType.toLowerCase()) {
-      case 'spot':
-      case 'crypto':
-        return exchanges.binance
-      case 'forex':
-        return exchanges.kraken
-      case 'commodities':
-      case 'indices':
-        return exchanges.kucoin
-      case 'stocks':
-      case 'options':
-      case 'bonds':
-      case 'etf':
-        return exchanges.binance // Fallback to binance for now
-      default:
-        throw new Error(`Unsupported market type: ${marketType}`)
+  private getExchangeForMarket(marketType: string): ccxt.Exchange {
+    const exchangeId = marketToExchange[marketType] || 'binance'
+    const exchange = exchanges[exchangeId]
+
+    if (!exchange) {
+      throw new Error(`No exchange configured for market type: ${marketType}`)
     }
+
+    return exchange
   }
 
   // Market-specific methods

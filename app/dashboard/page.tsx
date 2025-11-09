@@ -7,7 +7,7 @@ import { Icons } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { supabase, type TablesRow } from '@/lib/supabase'
 import { getBalance } from '@/lib/payment-service'
-import { RealMarketService } from '@/lib/real-market-service'
+import { getMarketData } from '@/lib/market-service'
 import { WalletService, type WalletConnection } from '@/lib/wallet-service'
 import { KK99Service, type KK99Balance } from '@/lib/kk99-service'
 import { Activity, AlertTriangle } from 'lucide-react'
@@ -170,17 +170,15 @@ export default function DashboardPage() {
 
   async function loadMarketData(): Promise<Market[]> {
     try {
-      const marketService = RealMarketService.getInstance()
-      
       const marketRequests = [
-        { symbol: 'BTC/USDT', type: 'spot', marketType: 'crypto' },
-        { symbol: 'EUR/USD', type: 'forex', marketType: 'forex' },
-        { symbol: 'AAPL', type: 'stocks', marketType: 'stocks' }
+        { symbol: 'BTC/USDT', type: 'spot' },
+        { symbol: 'EUR/USD', type: 'forex' },
+        { symbol: 'AAPL/USD', type: 'stocks' }
       ]
 
       const results = await Promise.all(
         marketRequests.map(({ symbol, type }) => 
-          marketService.getMarketData(symbol, type)
+          getMarketData(symbol, type)
             .catch(error => {
               console.error(`${symbol} verisi yüklenirken hata:`, error)
               return null
@@ -191,7 +189,7 @@ export default function DashboardPage() {
       return results
         .map((data, index) => {
           if (!data) return null
-          const { symbol, marketType } = marketRequests[index]
+          const { symbol, type: marketType } = marketRequests[index]
           return {
             symbol,
             price: data.price,

@@ -33,10 +33,14 @@
     "lucide-react": "^0.553.0",
     "next": "14",
     "postcss": "^8.5.6",
+    "protobufjs": "^7.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "18",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.17",
+    "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.12"
   }
 }

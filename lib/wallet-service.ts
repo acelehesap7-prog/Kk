@@ -54,6 +54,16 @@ export class WalletService {
     return WalletService.instance
   }
 
+  public getCurrentConnection(): WalletConnection | null {
+    const currentWallet = Array.from(this.connectedWallets.values())[0]
+    return currentWallet || null
+  }
+    if (!WalletService.instance) {
+      WalletService.instance = new WalletService()
+    }
+    return WalletService.instance
+  }
+
   // Connect to MetaMask wallet
   async connectMetaMask(): Promise<WalletConnection | null> {
     try {

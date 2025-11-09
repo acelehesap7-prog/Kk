@@ -9,18 +9,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-    from: () => ({
-      select: () => Promise.resolve({ data: [], error: null }),
-      insert: () => Promise.resolve({ data: null, error: null }),
-      update: () => Promise.resolve({ data: null, error: null }),
-      delete: () => Promise.resolve({ data: null, error: null })
-    })
-  }
-} else {
-  supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-}
-
-export { supabase }
 
 export type Tables = Database['public']['Tables']
 export type TablesInsert = {
@@ -76,7 +64,7 @@ export const getUserProfile = async (userId: string) => {
 }
 
 // Transaction helpers
-export const createTransaction = async (transaction: TablesInsert['transactions']) => {
+export const createTransaction = async (transaction: Database['public']['Tables']['transactions']['Insert']) => {
   const { data, error } = await supabase
     .from('transactions')
     .insert(transaction)
@@ -95,7 +83,7 @@ export const getTransactions = async (userId: string) => {
 }
 
 // Trade helpers
-export const createTrade = async (trade: TablesInsert['trades']) => {
+export const createTrade = async (trade: Database['public']['Tables']['trades']['Insert']) => {
   const { data, error } = await supabase
     .from('trades')
     .insert(trade)
@@ -136,7 +124,7 @@ export const updateTokenBalance = async (
       token,
       balance: amount,
       updated_at: new Date().toISOString(),
-    })
+    } as Database['public']['Tables']['token_balances']['Insert'])
     .select()
     .single()
   return { data, error }

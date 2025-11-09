@@ -30,6 +30,8 @@ export interface KK99Transaction {
   timestamp: number
   status: 'pending' | 'completed' | 'failed'
 }
+
+export interface StakingInfo {
   amount: number
   apy: number
   period: number
