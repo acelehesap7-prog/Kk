@@ -1,12 +1,14 @@
 'use client'
 
 import { supabase } from './supabase'
+import { ethers } from 'ethers'
 
 export interface WalletConnection {
   address: string
   network: string
   balance: number
   isConnected: boolean
+  kk99Balance?: number
 }
 
 export interface DepositAddress {

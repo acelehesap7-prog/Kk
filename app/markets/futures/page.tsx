@@ -1,23 +1,36 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TrendingUp, TrendingDown, Search, Wallet, Target, AlertTriangle } from 'lucide-react'
-import { getMarketsByType, MarketData } from '@/lib/market-service'
+import { RealMarketService } from '@/lib/real-market-service'
+import { WalletService } from '@/lib/wallet-service'
+import { KK99Service } from '@/lib/kk99-service'
+import { TradingService } from '@/lib/trading-service'
+import { MarketData } from '@/lib/market-service'
+import { AlertCircle, ArrowDownUp, ArrowUpDown } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+
+const TradingViewWidget = dynamic(() => import('@/components/TradingViewWidget'), { 
+  ssr: false 
+})
 
 export default function FuturesTradingPage() {
   const [markets, setMarkets] = useState<MarketData[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
   const [selectedPair, setSelectedPair] = useState<MarketData | null>(null)
-  const [orderType, setOrderType] = useState<'long' | 'short'>('long')
+  const [orderType, setOrderType] = useState<'market' | 'limit'>('market')
+  const [position, setPosition] = useState<'long' | 'short'>('long')
   const [leverage, setLeverage] = useState('10')
   const [amount, setAmount] = useState('')
   const [price, setPrice] = useState('')
+  const [walletConnection, setWalletConnection] = useState(null)
+  const [kk99Balance, setKk99Balance] = useState(0)
+  const [feeCalculation, setFeeCalculation] = useState(null)
+  const [liquidationPrice, setLiquidationPrice] = useState<number | null>(null)
+
+  const marketService = RealMarketService.getInstance()
+  const walletService = WalletService.getInstance()
+  const kk99Service = KK99Service.getInstance()
+  const tradingService = TradingService.getInstance()
 
   useEffect(() => {
     const loadMarkets = async () => {

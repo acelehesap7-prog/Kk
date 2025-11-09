@@ -1,13 +1,122 @@
 'use client'
 
-import { MarketData } from './market-service'
+import { MarketData, OrderBookEntry } from './market-service'
+import ccxt from 'ccxt'
 
-// Real API integrations for different market types
+// Supported exchange instances
+const exchanges = {
+  binance: new ccxt.binance(),
+  kraken: new ccxt.kraken(),
+  kucoin: new ccxt.kucoin(),
+}
+
 export class RealMarketService {
-  private baseUrl: string
+  private static instance: RealMarketService
+  private marketData: Map<string, MarketData> = new Map()
 
-  constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api'
+  private constructor() {
+    this.initializeExchanges()
+  }
+
+  static getInstance(): RealMarketService {
+    if (!RealMarketService.instance) {
+      RealMarketService.instance = new RealMarketService()
+    }
+    return RealMarketService.instance
+  }
+
+  private async initializeExchanges() {
+    // Load markets for each exchange
+    for (const exchange of Object.values(exchanges)) {
+      await exchange.loadMarkets()
+    }
+  }
+
+  async getMarketData(symbol: string, marketType: string): Promise<MarketData> {
+    const key = `${marketType}:${symbol}`
+    let data = this.marketData.get(key)
+
+    if (!data || Date.now() - data.timestamp > 10000) { // Refresh every 10 seconds
+      data = await this.fetchMarketData(symbol, marketType)
+      this.marketData.set(key, data)
+    }
+
+    return data
+  }
+
+  private async fetchMarketData(symbol: string, marketType: string): Promise<MarketData> {
+    try {
+      // Select appropriate exchange based on market type
+      const exchange = this.getExchangeForMarket(marketType)
+      
+      const ticker = await exchange.fetchTicker(symbol)
+      
+      return {
+        symbol,
+        price: ticker.last,
+        change: ticker.change || 0,
+        changePercent: ticker.percentage || 0,
+        volume: ticker.baseVolume || 0,
+        high24h: ticker.high || 0,
+        low24h: ticker.low || 0,
+        timestamp: Date.now(),
+        marketType
+      }
+    } catch (error) {
+      console.error(`Error fetching market data for ${symbol}:`, error)
+      throw error
+    }
+  }
+
+  async getOrderBook(symbol: string, marketType: string): Promise<{ bids: OrderBookEntry[], asks: OrderBookEntry[] }> {
+    try {
+      const exchange = this.getExchangeForMarket(marketType)
+      const orderbook = await exchange.fetchOrderBook(symbol)
+
+      return {
+        bids: orderbook.bids.map(([price, amount]) => ({ price, amount })),
+        asks: orderbook.asks.map(([price, amount]) => ({ price, amount }))
+      }
+    } catch (error) {
+      console.error(`Error fetching order book for ${symbol}:`, error)
+      throw error
+    }
+  }
+
+  private getExchangeForMarket(marketType: string): ccxt.Exchange {
+    switch (marketType.toLowerCase()) {
+      case 'spot':
+      case 'stocks':
+        return exchanges.binance
+      case 'forex':
+        return exchanges.kraken
+      case 'crypto':
+        return exchanges.kucoin
+      default:
+        throw new Error(`Unsupported market type: ${marketType}`)
+    }
+  }
+
+  // Additional methods for specific market types
+  async getForexRates(): Promise<MarketData[]> {
+    const exchange = exchanges.kraken
+    const symbols = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF']
+    return Promise.all(symbols.map(symbol => this.getMarketData(symbol, 'forex')))
+  }
+
+  async getCryptoMarkets(): Promise<MarketData[]> {
+    const exchange = exchanges.kucoin
+    const symbols = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'XRP/USDT']
+    return Promise.all(symbols.map(symbol => this.getMarketData(symbol, 'crypto')))
+  }
+
+  async getStockMarkets(): Promise<MarketData[]> {
+    // Note: Will need to integrate with a stock market API
+    // For now using sample stock symbols from supported exchanges
+    const symbols = ['AAPL/USD', 'GOOGL/USD', 'MSFT/USD', 'AMZN/USD']
+    return Promise.all(symbols.map(symbol => this.getMarketData(symbol, 'stocks')))
+  }
+}
   }
 
   // Get crypto market data from API

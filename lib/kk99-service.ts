@@ -19,6 +19,18 @@ export interface FeeCalculation {
 
 export interface StakingReward {
   amount: number
+  timestamp: number
+  apy: number
+}
+
+export interface KK99Transaction {
+  id: string
+  type: 'trade' | 'stake' | 'unstake' | 'reward'
+  amount: number
+  timestamp: number
+  status: 'pending' | 'completed' | 'failed'
+}
+  amount: number
   apy: number
   period: number
   estimatedReward: number

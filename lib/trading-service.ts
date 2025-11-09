@@ -1,34 +1,69 @@
-import { supabase } from './supabase';
-import { MarketData, OrderBook, Trade } from './market-service';
+import { supabase } from './supabase'
+import { MarketData, OrderBook, Trade } from './market-service'
+import { KK99Service } from './kk99-service'
+import { WalletService } from './wallet-service'
 
 export interface Position {
-  id: string;
-  userId: string;
-  symbol: string;
-  market: string;
-  side: 'long' | 'short';
-  leverage: number;
-  size: number;
-  margin: number;
-  entryPrice: number;
-  liquidationPrice: number;
-  takeProfit?: number;
-  stopLoss?: number;
-  unrealizedPnl: number;
-  realizedPnl: number;
-  status: 'open' | 'closed' | 'liquidated';
+  id: string
+  userId: string
+  symbol: string
+  market: string
+  side: 'long' | 'short'
+  leverage: number
+  size: number
+  margin: number
+  entryPrice: number
+  liquidationPrice: number
+  takeProfit?: number
+  stopLoss?: number
+  unrealizedPnl: number
+  realizedPnl: number
+  status: 'open' | 'closed' | 'liquidated'
 }
 
-class TradingService {
+export interface Order {
+  id: string
+  userId: string
+  symbol: string
+  market: string
+  type: 'limit' | 'market'
+  side: 'buy' | 'sell'
+  amount: number
+  price?: number
+  status: 'pending' | 'filled' | 'cancelled'
+  filled: number
+  remaining: number
+  fee: number
+  feeToken: string
+  timestamp: number
+}
+
+export class TradingService {
+  private static instance: TradingService
+  private kk99Service: KK99Service
+  private walletService: WalletService
+
+  private constructor() {
+    this.kk99Service = KK99Service.getInstance()
+    this.walletService = WalletService.getInstance()
+  }
+
+  static getInstance(): TradingService {
+    if (!TradingService.instance) {
+      TradingService.instance = new TradingService()
+    }
+    return TradingService.instance
+  }
+
   // Spot Trading
   async createSpotOrder(order: {
-    userId: string;
-    symbol: string;
-    side: 'buy' | 'sell';
-    type: 'market' | 'limit';
-    price?: number;
-    amount: number;
-  }): Promise<Trade> {
+    userId: string
+    symbol: string
+    side: 'buy' | 'sell'
+    type: 'market' | 'limit'
+    price?: number
+    amount: number
+  }): Promise<Order> {
     try {
       // Market fiyatını al
       const { data: marketData } = await supabase

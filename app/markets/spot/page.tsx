@@ -7,15 +7,26 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TrendingUp, TrendingDown, Search, Wallet, ArrowUpDown } from 'lucide-react'
-import { getMarketsByType, MarketData } from '@/lib/market-service'
+import { RealMarketService } from '@/lib/real-market-service'
+import { WalletService } from '@/lib/wallet-service'
+import { KK99Service } from '@/lib/kk99-service'
+import { MarketData } from '@/lib/market-service'
 
 export default function SpotTradingPage() {
   const [markets, setMarkets] = useState<MarketData[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedPair, setSelectedPair] = useState<MarketData | null>(null)
-  const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy')
+  const [orderType, setOrderType] = useState<'limit' | 'market'>('limit')
+  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
   const [price, setPrice] = useState('')
+  const [walletConnection, setWalletConnection] = useState(null)
+  const [kk99Balance, setKk99Balance] = useState(0)
+  const [feeCalculation, setFeeCalculation] = useState(null)
+
+  const marketService = RealMarketService.getInstance()
+  const walletService = WalletService.getInstance()
+  const kk99Service = KK99Service.getInstance()
 
   useEffect(() => {
     const loadMarkets = async () => {

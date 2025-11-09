@@ -1,38 +1,59 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TrendingUp, TrendingDown, Search, Wallet, DollarSign, Globe } from 'lucide-react'
-
-const forexPairs = [
-  { symbol: 'EUR/USD', price: 1.0875, change: 0.0025, changePercent: 0.23, volume: 125000000 },
-  { symbol: 'GBP/USD', price: 1.2650, change: -0.0045, changePercent: -0.35, volume: 98000000 },
-  { symbol: 'USD/JPY', price: 149.85, change: 0.75, changePercent: 0.50, volume: 110000000 },
-  { symbol: 'USD/CHF', price: 0.8925, change: 0.0015, changePercent: 0.17, volume: 75000000 },
-  { symbol: 'AUD/USD', price: 0.6485, change: -0.0025, changePercent: -0.38, volume: 65000000 },
-  { symbol: 'USD/CAD', price: 1.3675, change: 0.0035, changePercent: 0.26, volume: 55000000 },
-]
+import { RealMarketService } from '@/lib/real-market-service'
+import { WalletService } from '@/lib/wallet-service'
+import { KK99Service } from '@/lib/kk99-service'
+import { TradingService } from '@/lib/trading-service'
+import { MarketData } from '@/lib/market-service'
 
 export default function ForexTradingPage() {
-  const [selectedPair, setSelectedPair] = useState(forexPairs[0])
-  const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy')
-  const [leverage, setLeverage] = useState('100')
+  const [markets, setMarkets] = useState<MarketData[]>([])
+  const [selectedPair, setSelectedPair] = useState<MarketData | null>(null)
+  const [orderType, setOrderType] = useState<'market' | 'limit'>('market')
+  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy')
   const [amount, setAmount] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
+  const [price, setPrice] = useState('')
+  const [walletConnection, setWalletConnection] = useState(null)
+  const [kk99Balance, setKk99Balance] = useState(0)
+  const [feeCalculation, setFeeCalculation] = useState(null)
 
-  const filteredPairs = forexPairs.filter(pair =>
-    pair.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  useEffect(() => {
+    const loadMarkets = async () => {
+      try {
+        const forexRates = await marketService.getForexRates()
+        setMarkets(forexRates)
+        if (!selectedPair && forexRates.length > 0) {
+          setSelectedPair(forexRates[0])
+          setPrice(forexRates[0].price.toString())
+        }
+      } catch (error) {
+        console.error('Error loading forex markets:', error)
+      }
+    }
 
-  const handleTrade = () => {
-    if (!amount) {
-      alert('Lütfen işlem miktarını girin')
-      return
+    loadMarkets()
+    const interval = setInterval(loadMarkets, 10000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    const loadWalletAndKK99 = async () => {
+      try {
+        const connection = walletService.getWalletConnection()
+        setWalletConnection(connection)
+        
+        if (connection) {
+          const balance = await kk99Service.getBalance()
+          setKk99Balance(balance.totalBalance)
+        }
+      } catch (error) {
+        console.error('Error loading wallet/KK99 data:', error)
+      }
+    }
+
+    loadWalletAndKK99()
+  }, [])
     }
     
     const total = parseFloat(amount) * selectedPair.price
