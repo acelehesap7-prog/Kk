@@ -1,6 +1,7 @@
 'use client'
 
 import { z } from 'zod'
+import ccxt from 'ccxt'
 
 // Market data types
 export interface MarketData {
@@ -12,6 +13,7 @@ export interface MarketData {
   high24h: number
   low24h: number
   timestamp: number
+  marketType: string
 }
 
 export interface OrderBookEntry {
