@@ -1,83 +1,162 @@
-name: Deploy to Productionname: Deploy to GitHub Pages
+name: Deployname: Deploy to Productionname: Deploy to GitHub Pages
 
 
 
-on:on:
+on:
 
-  push:  push:
+  push:
 
-    branches: [main]    branches: ["main"]
+    branches:on:on:
 
-  pull_request:  workflow_dispatch:
+      - main
 
-    branches: [main]
+  pull_request:  push:  push:
 
-permissions:
+    branches:
 
-jobs:  contents: read
+      - main    branches: [main]    branches: ["main"]
 
-  build-and-deploy:  pages: write
+
+
+jobs:  pull_request:  workflow_dispatch:
+
+  build:
+
+    runs-on: ubuntu-latest    branches: [main]
+
+    
+
+    env:permissions:
+
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}jobs:  contents: read
+
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}  build-and-deploy:  pages: write
+
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     runs-on: ubuntu-latest  id-token: write
 
+    steps:
 
-
-    steps:concurrency:
-
-      - name: Checkout repository  group: "pages"
-
-        uses: actions/checkout@v4  cancel-in-progress: false
-
-
-
-      - name: Setup Node.jsjobs:
-
-        uses: actions/setup-node@v4  build:
-
-        with:    runs-on: ubuntu-latest
-
-          node-version: '20'    steps:
-
-          cache: 'npm'      - name: Checkout
+      - name: Checkout Repository
 
         uses: actions/checkout@v4
 
-      - name: Install dependencies      
+    steps:concurrency:
 
-        run: npm ci      - name: Setup Node
+      - name: Setup Node.js Environment
 
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4      - name: Checkout repository  group: "pages"
 
-      - name: Install Vercel CLI        with:
+        with:
 
-        run: npm install --global vercel@latest          node-version: "20"
+          node-version: '20'        uses: actions/checkout@v4  cancel-in-progress: false
 
           cache: 'npm'
 
+
+
+      - name: Install Dependencies
+
+        run: |      - name: Setup Node.jsjobs:
+
+          npm ci
+
+          npm install --global vercel@latest        uses: actions/setup-node@v4  build:
+
+
+
+      - name: Run Type Check        with:    runs-on: ubuntu-latest
+
+        run: npm run typecheck
+
+          node-version: '20'    steps:
+
+      - name: Run Lint Check
+
+        run: npm run lint          cache: 'npm'      - name: Checkout
+
+
+
+      - name: Build Application        uses: actions/checkout@v4
+
+        run: npm run build
+
+      - name: Install dependencies      
+
+  deploy:
+
+    needs: build        run: npm ci      - name: Setup Node
+
+    runs-on: ubuntu-latest
+
+    if: github.ref == 'refs/heads/main'        uses: actions/setup-node@v4
+
+    
+
+    env:      - name: Install Vercel CLI        with:
+
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}        run: npm install --global vercel@latest          node-version: "20"
+
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}          cache: 'npm'
+
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
       - name: Pull Vercel Environment Information          
 
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}      - name: Install dependencies
+    steps:
+
+      - name: Checkout Repository        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}      - name: Install dependencies
+
+        uses: actions/checkout@v4
 
         run: npm install
 
-      - name: Build Project Artifacts        
+      - name: Setup Node.js Environment
 
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}      - name: Build static site
+        uses: actions/setup-node@v4      - name: Build Project Artifacts        
+
+        with:
+
+          node-version: '20'        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}      - name: Build static site
+
+          cache: 'npm'
 
         env:        run: npm run build
 
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}        env:
+      - name: Install Dependencies
 
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}          NODE_ENV: production
+        run: |          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}        env:
 
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          npm ci
+
+          npm install --global vercel@latest          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}          NODE_ENV: production
+
+
+
+      - name: Pull Vercel Environment          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}        
+      - name: Build Project
 
-        env:      - name: Add .nojekyll file
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}        
 
+
+
+      - name: Deploy to Vercel        env:      - name: Add .nojekyll file
+
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}        run: touch ./out/.nojekyll
 
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}        
