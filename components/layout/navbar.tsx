@@ -14,6 +14,7 @@ import {
   X,
   TrendingUp
 } from 'lucide-react'
+import { NotificationDialog } from '../ui/notification-dialog'
 import { useState } from 'react'
 
 const navigation = [
@@ -64,6 +65,9 @@ export default function Navbar() {
           </div>
           
           <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+            {/* Notifications */}
+            <NotificationDialog />
+            
             {/* KK99 Balance */}
             <div className="flex items-center space-x-2 px-3 py-1 bg-blue-50 rounded-lg border border-blue-200">
               <Coins className="h-4 w-4 text-blue-600" />
@@ -128,6 +132,12 @@ export default function Navbar() {
             })}
             
             <div className="px-4 py-2">
+              {/* Notifications */}
+              <div className="mb-2">
+                <NotificationDialog />
+              </div>
+              
+              {/* Balance */}
               <div className="flex items-center space-x-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
                 <Coins className="h-4 w-4 text-blue-600" />
                 <span className="text-sm font-medium text-blue-600">5,000 KK99</span>
