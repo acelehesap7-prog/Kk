@@ -1,13 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static HTML export for GitHub Pages
-  output: "export",
-  distDir: "out",
+  // Use the default server output (remove static export) so App Router
+  // API routes and server-side features work correctly on Vercel.
   // Add trailing slashes for cleaner URLs
   trailingSlash: true,
   // GitHub Pages deployment configuration
-  basePath: process.env.NODE_ENV === 'production' ? '/Kk' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/Kk/' : '',
   // Disable image optimization for static export
   images: {
     unoptimized: true,
