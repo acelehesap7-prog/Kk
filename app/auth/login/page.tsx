@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,11 +31,35 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     
-    // Mock login process
-    setTimeout(() => {
+    try {
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        throw error
+      }
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        if (profile?.role === 'admin') {
+          router.push('/admin/dashboard')
+        } else {
+          router.push('/dashboard')
+        }
+      }
+    } catch (error: any) {
+      console.error('Login error:', error)
+      alert(error.message)
+    } finally {
       setIsLoading(false)
-      router.push('/dashboard')
-    }, 2000)
+    }
   }
 
   return (

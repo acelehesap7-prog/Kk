@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,11 +45,64 @@ export default function RegisterPage() {
     
     setIsLoading(true)
     
-    // Mock registration process
-    setTimeout(() => {
+    try {
+      // Kayıt ol
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            acceptedTerms: acceptTerms
+          }
+        }
+      })
+
+      if (signUpError) {
+        throw signUpError
+      }
+
+      // Profil oluştur
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email,
+            name,
+            role: 'user'
+          })
+
+        if (profileError) {
+          throw profileError
+        }
+
+        // Başlangıç tokenleri ver
+        const { error: tokenError } = await supabase
+          .from('assets')
+          .insert({
+            user_id: user.id,
+            symbol: 'KK99',
+            name: 'KK99 Token',
+            balance: 1000,
+            current_price: 0.5,
+            price_change_24h: 0,
+            icon: '🪙'
+          })
+
+        if (tokenError) {
+          throw tokenError
+        }
+
+        alert('Hesabınız oluşturuldu! E-posta adresinizi doğrulayın.')
+        router.push('/auth/login')
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error)
+      alert(error.message)
+    } finally {
       setIsLoading(false)
-      router.push('/dashboard')
-    }, 2000)
+    }
   }
 
   return (
