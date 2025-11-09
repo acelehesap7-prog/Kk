@@ -1,330 +1,850 @@
-'use client';'use client';'use client'
+'use client';"use client";
 
 
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';import { useState, useEffect } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';import { useRouter } from "next/navigation";
 
-import { Badge } from '@/components/ui/badge';import { useState, useEffect, useCallback } from 'react';import { useState, useEffect, useCallback } from 'react'
+import { Input } from '@/components/ui/input';import { supabase } from "@/lib/supabase";
 
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 
-import { Input } from '@/components/ui/input';import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge';import { Button } from "@/components/ui/button";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';import { toast } from "sonner";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';import { Badge } from '@/components/ui/badge';import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';interface Asset {
 
-import { import { Button } from '@/components/ui/button';import { Button } from '@/components/ui/button'
+import {   symbol: string;
 
-  Wallet, 
+  Wallet,   name: string;
 
-  Send, import { Input } from '@/components/ui/input';import { Input } from '@/components/ui/input'
+  Send,   balance: number;
 
-  ArrowDownLeft, 
+  ArrowDownLeft,   value: number;
 
-  ArrowUpRight, import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+  ArrowUpRight, }
 
   Plus, 
 
-  Minus,import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+  Minus,export default function WalletPage() {
 
-  TrendingUp,
+  TrendingUp,  const router = useRouter();
 
-  TrendingDown,import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+  TrendingDown,  const [assets, setAssets] = useState<Asset[]>([]);
 
-  Eye,
+  Eye,  const [loading, setLoading] = useState(false);
 
-  EyeOff,import { import { 
+  EyeOff,
 
-  Copy,
+  Copy,  useEffect(() => {
 
-  ExternalLink,  Wallet,   Wallet, 
+  ExternalLink,    const load = async () => {
 
-  Coins,
+  Coins,      setLoading(true);
 
-  CheckCircle2,  Send,   Send, 
+  CheckCircle2,      try {
 
-  AlertCircle,
+  AlertCircle,        const { data: { user } } = await supabase.auth.getUser();
 
-  QrCode,  ArrowDownLeft,   ArrowDownLeft, 
+  QrCode,        if (!user) {
 
-  ArrowRight,
+  ArrowRight,          router.push("/auth/login");
 
-  Search,  ArrowUpRight,   ArrowUpRight, 
+  Search,          return;
 
-  Settings2 as Settings,
+  Settings2 as Settings,        }
 
-  AlertTriangle,  Plus,   Plus, 
+  AlertTriangle,
 
-  ChevronRight,
+  ChevronRight,        const { data } = await supabase
 
-  History,  Minus,  Minus,
+  History,          .from("assets")
 
-  RefreshCw
+  RefreshCw          .select("symbol,name,balance,current_price")
 
-} from 'lucide-react';  TrendingUp,  TrendingUp,
+} from 'lucide-react';          .eq("user_id", user.id);
 
 import { supabase } from '@/lib/supabase';
 
-import { useRouter } from 'next/navigation';  TrendingDown,  TrendingDown,
+import { useRouter } from 'next/navigation';        if (data && Array.isArray(data)) {
 
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';          const formatted = data.map((a: any) => ({
 
-import { toast } from 'sonner';  Eye,  Eye,
+import { toast } from 'sonner';            symbol: a.symbol,
 
+            name: a.name,
 
+interface DBAsset {            balance: Number(a.balance) || 0,
 
-interface DBAsset {  EyeOff,  EyeOff,
+  user_id: string;            value: (Number(a.balance) || 0) * (Number(a.current_price) || 0),
 
-  user_id: string;
+  symbol: string;          }));
 
-  symbol: string;  Copy,  Copy,
+  name: string;          setAssets(formatted);
 
-  name: string;
+  balance: number;        }
 
-  balance: number;  ExternalLink,  ExternalLink,
+  current_price: number;      } catch (err) {
 
-  current_price: number;
+  price_change_24h: number;        console.error(err);
 
-  price_change_24h: number;  Coins,  Coins,
+  icon: string;        toast.error("Cüzdan verileri yüklenemedi");
 
-  icon: string;
+  deposit_address?: string;      } finally {
 
-  deposit_address?: string;  CheckCircle2,  CheckCircle2,
+}        setLoading(false);
 
-}
+      }
 
-  AlertCircle,  AlertCircle,
+interface Asset {    };
 
-interface Asset {
+  symbol: string;
 
-  symbol: string;  QrCode,  QrCode,
+  name: string;    load();
 
-  name: string;
-
-  balance: number;  ArrowRight,  ArrowRight,
+  balance: number;  }, [router]);
 
   value: number;
 
-  change24h: number;  Search,  Search,
+  change24h: number;  return (
 
-  icon: string;
+  icon: string;    <div className="container mx-auto px-4 py-8">
 
-  address?: string;  Settings2 as Settings,  Settings2 as Settings,
+  address?: string;      <div className="mb-6">
 
-}
+}        <h1 className="text-2xl font-bold">Cüzdan</h1>
 
-  AlertTriangle,  AlertTriangle,
+        <p className="text-sm text-muted-foreground">Varlıklarınızı buradan görüntüleyin</p>
 
-interface DBTransaction {
-
-  id: string;  ChevronRight,  ChevronRight,
-
-  user_id: string;
-
-  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';  History,  History,
-
-  amount: number;
-
-  asset: string;  RefreshCw  RefreshCw
-
-  status: 'pending' | 'completed' | 'failed';
-
-  created_at: string;} from 'lucide-react';} from 'lucide-react'
-
-  hash?: string;
-
-  from_address?: string;import { supabase } from '@/lib/supabase';import { supabase } from '@/lib/supabase'
-
-  to_address?: string;
-
-}import { useRouter } from 'next/navigation';import { useRouter } from 'next/navigation'
-
-
-
-interface Transaction {import { QRCodeSVG } from 'qrcode.react';import { QRCodeSVG } from 'qrcode.react'
+interface DBTransaction {      </div>
 
   id: string;
 
-  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';import { toast } from 'sonner';import { toast } from 'sonner'
+  user_id: string;      <Card>
 
-  amount: number;
+  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';        <CardHeader>
 
-  asset: string;
+  amount: number;          <CardTitle>Varlıklar</CardTitle>
 
-  value: number;
+  asset: string;          <CardDescription>Hızlı bakiye görünümü</CardDescription>
 
-  status: 'pending' | 'completed' | 'failed';interface DBAsset {interface DBAsset {
+  status: 'pending' | 'completed' | 'failed';        </CardHeader>
 
-  timestamp: string;
+  created_at: string;        <CardContent>
 
-  hash?: string;  user_id: string;  user_id: string;
+  hash?: string;          {loading ? (
 
-  from?: string;
+  from_address?: string;            <p>Yükleniyor...</p>
 
-  to?: string;  symbol: string;  symbol: string;
+  to_address?: string;          ) : assets.length === 0 ? (
 
-}
+}            <div className="space-y-3">
 
-  name: string;  name: string;
+              <p>Hiç varlık bulunamadı.</p>
 
-interface DBWalletAddress {
+interface Transaction {              <Button onClick={() => router.push("/markets")}>Piyasaları Gör</Button>
 
-  user_id: string;  balance: number;  balance: number;
+  id: string;            </div>
 
-  chain: string;
+  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';          ) : (
 
-  address: string;  current_price: number;  current_price: number;
+  amount: number;            <div className="space-y-4">
+
+  asset: string;              {assets.map((a) => (
+
+  value: number;                <div key={a.symbol} className="flex justify-between p-3 border rounded">
+
+  status: 'pending' | 'completed' | 'failed';                  <div>
+
+  timestamp: string;                    <div className="font-medium">{a.symbol}</div>
+
+  hash?: string;                    <div className="text-sm text-muted-foreground">{a.name}</div>
+
+  from?: string;                  </div>
+
+  to?: string;                  <div className="text-right">
+
+}                    <div className="font-medium">{a.balance}</div>
+
+                    <div className="text-sm text-muted-foreground">${a.value.toFixed(2)}</div>
+
+interface DBWalletAddress {                  </div>
+
+  user_id: string;                </div>
+
+  chain: string;              ))}
+
+  address: string;            </div>
+
+  memo?: string;          )}
+
+  network: string;        </CardContent>
+
+}      </Card>
+
+    </div>
+
+interface WalletAddress {  );
+
+  chain: string;}
+
+  address: string;'use client';'use client';'use client'
 
   memo?: string;
-
-  network: string;  price_change_24h: number;  price_change_24h: number;
-
-}
-
-  icon: string;  icon: string;
-
-interface WalletAddress {
-
-  chain: string;  deposit_address?: string;  deposit_address?: string;
-
-  address: string;
-
-  memo?: string;}}
 
   network: string;
 
 }
 
+import { useState, useEffect, useCallback } from 'react';
 
+export default function WalletPage() {
 
-export default function WalletPage() {interface Asset {interface Asset {
+  const router = useRouter();import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-  const router = useRouter();
+  const [assets, setAssets] = useState<Asset[]>([]);
 
-  const [assets, setAssets] = useState<Asset[]>([]);  symbol: string;  symbol: string;
+  const [transactions, setTransactions] = useState<Transaction[]>([]);import { Badge } from '@/components/ui/badge';import { useState, useEffect, useCallback } from 'react';import { useState, useEffect, useCallback } from 'react'
 
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [totalBalance, setTotalBalance] = useState(0);
 
-  const [totalBalance, setTotalBalance] = useState(0);  name: string;  name: string;
+  const [hideBalances, setHideBalances] = useState(false);import { Button } from '@/components/ui/button';
 
-  const [hideBalances, setHideBalances] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);  balance: number;  balance: number;
+  const [addresses, setAddresses] = useState<WalletAddress[]>([]);import { Input } from '@/components/ui/input';import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-  const [addresses, setAddresses] = useState<WalletAddress[]>([]);
+  const [depositAddress, setDepositAddress] = useState<string>('');
 
-  const [depositAddress, setDepositAddress] = useState<string>('');  value: number;  value: number;
+  const [showQR, setShowQR] = useState(false);import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-  const [showQR, setShowQR] = useState(false);
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
 
-  const [withdrawalAmount, setWithdrawalAmount] = useState('');  change24h: number;  change24h: number;
+  const [withdrawalAddress, setWithdrawalAddress] = useState('');import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';import { Badge } from '@/components/ui/badge';import { Badge } from '@/components/ui/badge'
 
-  const [withdrawalAddress, setWithdrawalAddress] = useState('');
+  const [selectedChain, setSelectedChain] = useState('ETH');
 
-  const [selectedChain, setSelectedChain] = useState('ETH');  icon: string;  icon: string;
+  const [loading, setLoading] = useState(false);import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const [searchTerm, setSearchTerm] = useState('');  address?: string;  address?: string;
+import { import { Button } from '@/components/ui/button';import { Button } from '@/components/ui/button'
 
+  const loadWalletData = useCallback(async () => {
 
-
-  const loadWalletData = useCallback(async () => {}}
-
-    setLoading(true);
+    setLoading(true);  Wallet, 
 
     try {
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();  Send, import { Input } from '@/components/ui/input';import { Input } from '@/components/ui/input'
 
-      if (!user) {interface DBTransaction {interface DBTransaction {
+      if (!user) {
 
-        router.push('/auth/login');
+        router.push('/auth/login');  ArrowDownLeft, 
 
-        return;  id: string;  id: string;
+        return;
+
+      }  ArrowUpRight, import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+
+
+      const { data: assets } = await supabase  Plus, 
+
+        .from('assets')
+
+        .select('*')  Minus,import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+        .eq('user_id', user.id);
+
+  TrendingUp,
+
+      if (assets) {
+
+        const formattedAssets: Asset[] = assets.map((asset: DBAsset) => ({  TrendingDown,import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+
+          symbol: asset.symbol,
+
+          name: asset.name,  Eye,
+
+          balance: asset.balance,
+
+          value: asset.balance * asset.current_price,  EyeOff,import { import { 
+
+          change24h: asset.price_change_24h,
+
+          icon: asset.icon,  Copy,
+
+          address: asset.deposit_address
+
+        }));  ExternalLink,  Wallet,   Wallet, 
+
+
+
+        setAssets(formattedAssets);  Coins,
+
+        const total = formattedAssets.reduce((acc, asset) => acc + asset.value, 0);
+
+        setTotalBalance(total);  CheckCircle2,  Send,   Send, 
 
       }
 
-  user_id: string;  user_id: string;
+  AlertCircle,
 
-      const { data: assets } = await supabase
+      const { data: transactions } = await supabase
 
-        .from('assets')  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';
+        .from('transactions')  QrCode,  ArrowDownLeft,   ArrowDownLeft, 
 
         .select('*')
 
-        .eq('user_id', user.id);  amount: number;  amount: number;
+        .eq('user_id', user.id)  ArrowRight,
+
+        .order('created_at', { ascending: false })
+
+        .limit(10);  Search,  ArrowUpRight,   ArrowUpRight, 
 
 
 
-      if (assets) {  asset: string;  asset: string;
+      if (transactions) {  Settings2 as Settings,
 
-        const formattedAssets: Asset[] = assets.map((asset: DBAsset) => ({
+        setTransactions(transactions as Transaction[]);
 
-          symbol: asset.symbol,  status: 'pending' | 'completed' | 'failed';  status: 'pending' | 'completed' | 'failed';
+      }  AlertTriangle,  Plus,   Plus, 
 
-          name: asset.name,
 
-          balance: asset.balance,  created_at: string;  created_at: string;
 
-          value: asset.balance * asset.current_price,
+      const { data: addresses } = await supabase  ChevronRight,
 
-          change24h: asset.price_change_24h,  hash?: string;  hash?: string;
+        .from('wallet_addresses')
 
-          icon: asset.icon,
+        .select('*')  History,  Minus,  Minus,
 
-          address: asset.deposit_address  from_address?: string;  from_address?: string;
+        .eq('user_id', user.id);
 
-        }));
+  RefreshCw
 
-  to_address?: string;  to_address?: string;
+      if (addresses) {
 
-        setAssets(formattedAssets);
-
-        const total = formattedAssets.reduce((acc, asset) => acc + asset.value, 0);}}
-
-        setTotalBalance(total);
+        setAddresses(addresses as WalletAddress[]);} from 'lucide-react';  TrendingUp,  TrendingUp,
 
       }
 
+    } catch (error) {import { supabase } from '@/lib/supabase';
+
+      console.error('Failed to load wallet data:', error);
+
+      toast.error('Failed to load wallet data');import { useRouter } from 'next/navigation';  TrendingDown,  TrendingDown,
+
+    } finally {
+
+      setLoading(false);import { QRCodeSVG } from 'qrcode.react';
+
+    }
+
+  }, [router]);import { toast } from 'sonner';  Eye,  Eye,
 
 
-      const { data: transactions } = await supabaseinterface Transaction {interface Transaction {
 
-        .from('transactions')
+  useEffect(() => {
 
-        .select('*')  id: string;  id: string;
+    loadWalletData();
 
-        .eq('user_id', user.id)
-
-        .order('created_at', { ascending: false })  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';
-
-        .limit(10);
-
-  amount: number;  amount: number;
-
-      if (transactions) {
-
-        setTransactions(transactions as Transaction[]);  asset: string;  asset: string;
-
-      }
-
-  value: number;  value: number;
-
-      const { data: addresses } = await supabase
-
-        .from('wallet_addresses')  status: 'pending' | 'completed' | 'failed';  status: 'pending' | 'completed' | 'failed';
-
-        .select('*')
-
-        .eq('user_id', user.id);  timestamp: string;  timestamp: string;
+  }, [loadWalletData]);interface DBAsset {  EyeOff,  EyeOff,
 
 
+
+  const formatBalance = (balance: number) => {  user_id: string;
+
+    return hideBalances ? '****' : balance.toLocaleString();
+
+  };  symbol: string;  Copy,  Copy,
+
+
+
+  const formatValue = (value: number) => {  name: string;
+
+    return hideBalances ? '****' : `$${value.toLocaleString()}`;
+
+  };  balance: number;  ExternalLink,  ExternalLink,
+
+
+
+  const filteredAssets = assets.filter(asset =>  current_price: number;
+
+    asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+
+    asset.name.toLowerCase().includes(searchTerm.toLowerCase())  price_change_24h: number;  Coins,  Coins,
+
+  );
+
+  icon: string;
+
+  const handleCopyAddress = (address: string) => {
+
+    navigator.clipboard.writeText(address);  deposit_address?: string;  CheckCircle2,  CheckCircle2,
+
+    toast.success('Address copied to clipboard');
+
+  };}
+
+
+
+  const handleDeposit = (asset: Asset) => {  AlertCircle,  AlertCircle,
+
+    setSelectedAsset(asset);
+
+    setShowQR(true);interface Asset {
+
+  };
+
+  symbol: string;  QrCode,  QrCode,
+
+  const handleWithdraw = async () => {
+
+    if (!selectedAsset || !withdrawalAmount || !withdrawalAddress) return;  name: string;
+
+    
+
+    setLoading(true);  balance: number;  ArrowRight,  ArrowRight,
+
+    try {
+
+      // Implement withdrawal logic here  value: number;
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Refresh data after successful withdrawal  change24h: number;  Search,  Search,
+
+      await loadWalletData();
+
+      toast.success('Withdrawal successful');  icon: string;
+
+    } catch (error) {
+
+      console.error('Withdrawal failed:', error);  address?: string;  Settings2 as Settings,  Settings2 as Settings,
+
+      toast.error('Withdrawal failed');
+
+    } finally {}
+
+      setLoading(false);
+
+    }  AlertTriangle,  AlertTriangle,
+
+  };
+
+interface DBTransaction {
+
+  return (
+
+    <div className="container mx-auto px-4 py-8">  id: string;  ChevronRight,  ChevronRight,
+
+      <div className="flex items-center justify-between mb-8">
+
+        <div>  user_id: string;
+
+          <h1 className="text-2xl font-bold">Varlıklarım</h1>
+
+          <p className="text-muted-foreground">  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';  History,  History,
+
+            Varlıklarınızı yönetin ve işlem yapın
+
+          </p>  amount: number;
+
+        </div>
+
+        <div className="flex items-center gap-4">  asset: string;  RefreshCw  RefreshCw
+
+          <Button
+
+            variant="ghost"  status: 'pending' | 'completed' | 'failed';
+
+            size="icon"
+
+            onClick={() => setHideBalances(!hideBalances)}  created_at: string;} from 'lucide-react';} from 'lucide-react'
+
+          >
+
+            {hideBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}  hash?: string;
+
+          </Button>
+
+          <Button  from_address?: string;import { supabase } from '@/lib/supabase';import { supabase } from '@/lib/supabase'
+
+            variant="outline"
+
+            onClick={() => router.push('/settings/wallet')}  to_address?: string;
+
+          >
+
+            <Settings className="h-4 w-4 mr-2" />}import { useRouter } from 'next/navigation';import { useRouter } from 'next/navigation'
+
+            Ayarlar
+
+          </Button>
+
+        </div>
+
+      </div>interface Transaction {import { QRCodeSVG } from 'qrcode.react';import { QRCodeSVG } from 'qrcode.react'
+
+
+
+      <Card className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">  id: string;
+
+        <CardHeader>
+
+          <CardTitle className="flex items-center space-x-2">  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';import { toast } from 'sonner';import { toast } from 'sonner'
+
+            <Wallet className="h-6 w-6 text-blue-600" />
+
+            <span>Total Portfolio Value</span>  amount: number;
+
+          </CardTitle>
+
+        </CardHeader>  asset: string;
+
+        <CardContent>
+
+          <div className="text-4xl font-bold text-blue-600 mb-2">  value: number;
+
+            {formatValue(totalBalance)}
+
+          </div>  status: 'pending' | 'completed' | 'failed';interface DBAsset {interface DBAsset {
+
+          <div className="flex items-center space-x-2">
+
+            <TrendingUp className="h-4 w-4 text-green-600" />  timestamp: string;
+
+            <span className="text-green-600 font-medium">+2.45% (24h)</span>
+
+          </div>  hash?: string;  user_id: string;  user_id: string;
+
+        </CardContent>
+
+      </Card>  from?: string;
+
+
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">  to?: string;  symbol: string;  symbol: string;
+
+        <div className="lg:col-span-2">
+
+          <Card>}
+
+            <CardHeader>
+
+              <CardTitle>Assets</CardTitle>  name: string;  name: string;
+
+              <CardDescription>
+
+                Your cryptocurrency holdingsinterface DBWalletAddress {
+
+              </CardDescription>
+
+            </CardHeader>  user_id: string;  balance: number;  balance: number;
+
+            <CardContent>
+
+              <div className="space-y-4">  chain: string;
+
+                {filteredAssets.map((asset) => (
+
+                  <div  address: string;  current_price: number;  current_price: number;
+
+                    key={asset.symbol}
+
+                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"  memo?: string;
+
+                    onClick={() => setSelectedAsset(asset)}
+
+                  >  network: string;  price_change_24h: number;  price_change_24h: number;
+
+                    <div className="flex items-center space-x-3">
+
+                      <div className="text-2xl">{asset.icon}</div>}
+
+                      <div>
+
+                        <div className="font-medium">{asset.symbol}</div>  icon: string;  icon: string;
+
+                        <div className="text-sm text-muted-foreground">{asset.name}</div>
+
+                      </div>interface WalletAddress {
+
+                    </div>
+
+                    <div className="text-right">  chain: string;  deposit_address?: string;  deposit_address?: string;
+
+                      <div className="font-medium">{formatBalance(asset.balance)}</div>
+
+                      <div className="text-sm text-muted-foreground">{formatValue(asset.value)}</div>  address: string;
+
+                      <div className={`text-sm flex items-center ${
+
+                        asset.change24h >= 0 ? 'text-green-600' : 'text-red-600'  memo?: string;}}
+
+                      }`}>
+
+                        {asset.change24h >= 0 ? (  network: string;
+
+                          <TrendingUp className="h-3 w-3 mr-1" />
+
+                        ) : (}
+
+                          <TrendingDown className="h-3 w-3 mr-1" />
+
+                        )}
+
+                        {asset.change24h.toFixed(2)}%
+
+                      </div>export default function WalletPage() {interface Asset {interface Asset {
+
+                    </div>
+
+                  </div>  const router = useRouter();
+
+                ))}
+
+              </div>  const [assets, setAssets] = useState<Asset[]>([]);  symbol: string;  symbol: string;
+
+            </CardContent>
+
+          </Card>  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+        </div>
+
+  const [totalBalance, setTotalBalance] = useState(0);  name: string;  name: string;
+
+        <div className="space-y-6">
+
+          <Card>  const [hideBalances, setHideBalances] = useState(false);
+
+            <CardHeader>
+
+              <CardTitle>Quick Actions</CardTitle>  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);  balance: number;  balance: number;
+
+            </CardHeader>
+
+            <CardContent className="space-y-3">  const [addresses, setAddresses] = useState<WalletAddress[]>([]);
+
+              <Button className="w-full" size="lg">
+
+                <Plus className="h-4 w-4 mr-2" />  const [depositAddress, setDepositAddress] = useState<string>('');  value: number;  value: number;
+
+                Deposit
+
+              </Button>  const [showQR, setShowQR] = useState(false);
+
+              <Button variant="outline" className="w-full" size="lg">
+
+                <Minus className="h-4 w-4 mr-2" />  const [withdrawalAmount, setWithdrawalAmount] = useState('');  change24h: number;  change24h: number;
+
+                Withdraw
+
+              </Button>  const [withdrawalAddress, setWithdrawalAddress] = useState('');
+
+              <Button variant="outline" className="w-full" size="lg">
+
+                <Send className="h-4 w-4 mr-2" />  const [selectedChain, setSelectedChain] = useState('ETH');  icon: string;  icon: string;
+
+                Transfer
+
+              </Button>  const [loading, setLoading] = useState(false);
+
+              <Button variant="outline" className="w-full" size="lg">
+
+                <ArrowUpRight className="h-4 w-4 mr-2" />  const [searchTerm, setSearchTerm] = useState('');  address?: string;  address?: string;
+
+                Trade
+
+              </Button>
+
+            </CardContent>
+
+          </Card>  const loadWalletData = useCallback(async () => {}}
+
+
+
+          <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">    setLoading(true);
+
+            <CardHeader>
+
+              <CardTitle className="flex items-center space-x-2">    try {
+
+                <Coins className="h-5 w-5 text-blue-600" />
+
+                <span>KK99 Benefits</span>      const { data: { user } } = await supabase.auth.getUser();
+
+              </CardTitle>
+
+            </CardHeader>      if (!user) {interface DBTransaction {interface DBTransaction {
+
+            <CardContent>
+
+              <div className="space-y-3">        router.push('/auth/login');
+
+                <div className="flex justify-between">
+
+                  <span className="text-sm">Current Balance:</span>        return;  id: string;  id: string;
+
+                  <span className="font-medium text-blue-600">{formatBalance(5000)} KK99</span>
+
+                </div>      }
+
+                <div className="flex justify-between">
+
+                  <span className="text-sm">Staking Rewards:</span>  user_id: string;  user_id: string;
+
+                  <span className="font-medium text-green-600">+125 KK99</span>
+
+                </div>      const { data: assets } = await supabase
+
+                <div className="flex justify-between">
+
+                  <span className="text-sm">Trading Discounts:</span>        .from('assets')  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';
+
+                  <span className="font-medium text-purple-600">75% OFF</span>
+
+                </div>        .select('*')
+
+                <Button variant="outline" size="sm" className="w-full mt-3">
+
+                  Stake KK99        .eq('user_id', user.id);  amount: number;  amount: number;
+
+                </Button>
+
+              </div>
+
+            </CardContent>
+
+          </Card>      if (assets) {  asset: string;  asset: string;
+
+        </div>
+
+      </div>        const formattedAssets: Asset[] = assets.map((asset: DBAsset) => ({
+
+
+
+      <Card className="mt-8">          symbol: asset.symbol,  status: 'pending' | 'completed' | 'failed';  status: 'pending' | 'completed' | 'failed';
+
+        <CardHeader>
+
+          <CardTitle>Recent Transactions</CardTitle>          name: asset.name,
+
+          <CardDescription>
+
+            Your latest wallet activity          balance: asset.balance,  created_at: string;  created_at: string;
+
+          </CardDescription>
+
+        </CardHeader>          value: asset.balance * asset.current_price,
+
+        <CardContent>
+
+          <div className="space-y-4">          change24h: asset.price_change_24h,  hash?: string;  hash?: string;
+
+            {transactions.map((tx) => (
+
+              <div key={tx.id} className="flex items-center justify-between p-4 rounded-lg border">          icon: asset.icon,
+
+                <div className="flex items-center space-x-3">
+
+                  <div className={`p-2 rounded-full ${          address: asset.deposit_address  from_address?: string;  from_address?: string;
+
+                    tx.type === 'deposit' ? 'bg-green-100' :
+
+                    tx.type === 'withdraw' ? 'bg-red-100' :        }));
+
+                    tx.type === 'trade' ? 'bg-blue-100' :
+
+                    'bg-purple-100'  to_address?: string;  to_address?: string;
+
+                  }`}>
+
+                    {tx.type === 'deposit' && <ArrowDownLeft className="h-4 w-4 text-green-600" />}        setAssets(formattedAssets);
+
+                    {tx.type === 'withdraw' && <ArrowUpRight className="h-4 w-4 text-red-600" />}
+
+                    {tx.type === 'trade' && <ArrowUpRight className="h-4 w-4 text-blue-600" />}        const total = formattedAssets.reduce((acc, asset) => acc + asset.value, 0);}}
+
+                    {tx.type === 'transfer' && <Send className="h-4 w-4 text-purple-600" />}
+
+                  </div>        setTotalBalance(total);
+
+                  <div>
+
+                    <div className="font-medium capitalize">{tx.type}</div>      }
+
+                    <div className="text-sm text-muted-foreground">
+
+                      {tx.timestamp}
+
+                    </div>
+
+                  </div>      const { data: transactions } = await supabaseinterface Transaction {interface Transaction {
+
+                </div>
+
+                <div className="text-right">        .from('transactions')
+
+                  <div className="font-medium">
+
+                    {tx.amount} {tx.asset}        .select('*')  id: string;  id: string;
+
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">        .eq('user_id', user.id)
+
+                    ${tx.value.toFixed(2)}
+
+                  </div>        .order('created_at', { ascending: false })  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';  type: 'deposit' | 'withdraw' | 'transfer' | 'trade';
+
+                  <Badge 
+
+                    variant={tx.status === 'completed' ? 'default' :         .limit(10);
+
+                            tx.status === 'pending' ? 'secondary' : 'destructive'}
+
+                    className="text-xs"  amount: number;  amount: number;
+
+                  >
+
+                    {tx.status}      if (transactions) {
+
+                  </Badge>
+
+                </div>        setTransactions(transactions as Transaction[]);  asset: string;  asset: string;
+
+              </div>
+
+            ))}      }
+
+          </div>
+
+          <div className="mt-4 text-center">  value: number;  value: number;
+
+            <Button variant="outline">
+
+              View All Transactions      const { data: addresses } = await supabase
+
+              <ExternalLink className="h-4 w-4 ml-2" />
+
+            </Button>        .from('wallet_addresses')  status: 'pending' | 'completed' | 'failed';  status: 'pending' | 'completed' | 'failed';
+
+          </div>
+
+        </CardContent>        .select('*')
+
+      </Card>
+
+    </div>        .eq('user_id', user.id);  timestamp: string;  timestamp: string;
+
+  );
+
+}
 
       if (addresses) {  hash?: string;  hash?: string;
 
